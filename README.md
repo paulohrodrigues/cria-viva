@@ -228,6 +228,8 @@ Veja `apps/api/.env.example`. Resumo:
 
 O `heroku-postbuild` compila shared → web → api, e a fase `release` do Procfile aplica as migrations (`prisma migrate deploy`) antes de cada nova versão entrar no ar.
 
+Para monitoramento de uptime (UptimeRobot, Pingdom...), aponte para `GET /api/health` — responde `200` com o status do banco e do Redis, ou `503` se alguma dependência estiver fora.
+
 > **Migrando de um banco criado com `db push`?** Marque o baseline uma única vez:
 > `heroku run "cd apps/api && npx prisma migrate resolve --applied 0_init" -a SEU_APP`
 

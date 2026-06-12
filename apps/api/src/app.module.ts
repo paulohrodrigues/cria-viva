@@ -16,6 +16,7 @@ import { EventsModule } from './modules/events/events.module'
 import { AlertsModule } from './modules/alerts/alerts.module'
 import { ReportsModule } from './modules/reports/reports.module'
 import { PushModule } from './modules/push/push.module'
+import { HealthModule } from './modules/health/health.module'
 
 const webDistPath = join(__dirname, '..', '..', '..', 'apps', 'web', 'dist')
 
@@ -55,6 +56,7 @@ const webDistPath = join(__dirname, '..', '..', '..', 'apps', 'web', 'dist')
     AlertsModule,
     ReportsModule,
     PushModule,
+    HealthModule,
   ],
   providers: [{ provide: APP_GUARD, useClass: ThrottlerGuard }],
 })
