@@ -179,7 +179,7 @@ docker compose up -d
 | API (NestJS + hot reload) | http://localhost:3002/api |
 | MariaDB | localhost:3306 (`criaviva` / `criaviva123`) |
 
-O compose já injeta todas as variáveis de desenvolvimento (incluindo chaves VAPID de teste). O schema do banco é aplicado automaticamente na subida do container da API.
+O compose já injeta as variáveis de desenvolvimento. Para habilitar push notifications localmente, copie `.env.example` para `.env` e gere suas chaves com `npx web-push generate-vapid-keys` (sem elas a API sobe normalmente, apenas com push desabilitado). O schema do banco é aplicado automaticamente na subida do container da API.
 
 ### Testar os alertas sem esperar 283 dias
 
