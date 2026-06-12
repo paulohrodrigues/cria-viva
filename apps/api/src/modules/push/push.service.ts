@@ -52,15 +52,8 @@ export class PushService implements OnModuleInit {
     })
     if (subscriptions.length === 0) return { sent: 0 }
 
-    await Promise.allSettled(
-      subscriptions.map((sub) =>
-        webpush.sendNotification(
-          { endpoint: sub.endpoint, keys: { p256dh: sub.p256dh, auth: sub.auth } },
-          JSON.stringify(payload),
-        ),
-      ),
-    )
-    return { sent: subscriptions.length }
+    const { sent } = await this.dispatch(subscriptions, payload)
+    return { sent }
   }
 
   async sendToFarm(fazendaId: string, payload: PushPayload) {
@@ -79,6 +72,16 @@ export class PushService implements OnModuleInit {
       return
     }
 
+    const { failed } = await this.dispatch(subscriptions, payload)
+    if (failed > 0) {
+      this.logger.warn(`${failed}/${subscriptions.length} push notifications failed`)
+    }
+  }
+
+  private async dispatch(
+    subscriptions: Array<{ endpoint: string; p256dh: string; auth: string }>,
+    payload: PushPayload,
+  ) {
     const results = await Promise.allSettled(
       subscriptions.map((sub) =>
         webpush.sendNotification(
@@ -88,20 +91,22 @@ export class PushService implements OnModuleInit {
       ),
     )
 
-    const failed = results.filter((r) => r.status === 'rejected')
-    if (failed.length > 0) {
-      this.logger.warn(`${failed.length}/${subscriptions.length} push notifications failed`)
+    // 404/410: endpoint expirado ou cancelado; 403: subscription criada com
+    // outra chave VAPID (rotação de chave) — nos três casos nunca mais funciona.
+    const deadEndpoints = results
+      .map((result, i) => {
+        if (result.status !== 'rejected') return null
+        const statusCode = (result.reason as { statusCode?: number })?.statusCode
+        return statusCode && [403, 404, 410].includes(statusCode) ? subscriptions[i].endpoint : null
+      })
+      .filter((endpoint): endpoint is string => endpoint !== null)
+
+    if (deadEndpoints.length > 0) {
+      await this.prisma.pushSubscription.deleteMany({ where: { endpoint: { in: deadEndpoints } } })
+      this.logger.log(`Removed ${deadEndpoints.length} dead push subscriptions`)
     }
 
-    // Remove subscriptions that are gone (410 Gone)
-    for (let i = 0; i < results.length; i++) {
-      const result = results[i]
-      if (result.status === 'rejected') {
-        const err = result.reason as any
-        if (err?.statusCode === 410) {
-          await this.prisma.pushSubscription.delete({ where: { endpoint: subscriptions[i].endpoint } })
-        }
-      }
-    }
+    const failed = results.filter((r) => r.status === 'rejected').length
+    return { sent: subscriptions.length - failed, failed }
   }
 }
