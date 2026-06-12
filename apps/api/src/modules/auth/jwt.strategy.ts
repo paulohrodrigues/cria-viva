@@ -8,7 +8,7 @@ export class JwtStrategy extends PassportStrategy(Strategy) {
   constructor(config: ConfigService) {
     const secret = config.get<string>('JWT_SECRET')
     if (!secret) {
-      throw new Error('JWT_SECRET não definido — configure a variável de ambiente antes de iniciar')
+      throw new Error('JWT_SECRET is not set — configure the environment variable before starting')
     }
     super({
       jwtFromRequest: ExtractJwt.fromAuthHeaderAsBearerToken(),

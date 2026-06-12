@@ -5,7 +5,7 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { api } from '../lib/api'
 import { formatDate, daysToText } from '../lib/utils'
 import { EVENT_TYPE_LABELS, PREGNANCY_STATUS_LABELS, calculateRemainingDays } from '@cria-viva/shared'
-import { NovoEventoModal } from '../components/eventos/NovoEventoModal'
+import { NewEventModal } from '../components/events/NewEventModal'
 import { useCurrentFarm } from '../store/currentFarm'
 import toast from 'react-hot-toast'
 
@@ -19,31 +19,31 @@ export function AnimalPage() {
   const { data: animal, isLoading } = useQuery({
     queryKey: ['animal', id],
     queryFn: async () => {
-      const { data } = await api.get(`/fazendas/${farmId}/animais/${id}`)
+      const { data } = await api.get(`/farms/${farmId}/animals/${id}`)
       return data
     },
     enabled: !!id && !!farmId,
   })
 
   const deleteEvent = useMutation({
-    mutationFn: async (eventoId: string) => {
-      await api.delete(`/animais/${id}/eventos/${eventoId}`)
+    mutationFn: async (eventId: string) => {
+      await api.delete(`/animals/${id}/events/${eventId}`)
     },
     onSuccess: () => {
       toast.success('Evento removido')
       qc.invalidateQueries({ queryKey: ['animal', id] })
       qc.invalidateQueries({ queryKey: ['dashboard'] })
-      qc.invalidateQueries({ queryKey: ['animais'] })
+      qc.invalidateQueries({ queryKey: ['animals'] })
     },
     onError: () => toast.error('Erro ao remover evento'),
   })
 
   const registerBirth = useMutation({
     mutationFn: async () => {
-      await api.post(`/animais/${id}/eventos`, {
-        tipo: 'PARTO',
-        dataEvento: new Date().toISOString().split('T')[0],
-        resultado: true,
+      await api.post(`/animals/${id}/events`, {
+        type: 'CALVING',
+        eventDate: new Date().toISOString().split('T')[0],
+        result: true,
       })
     },
     onSuccess: () => {
@@ -62,8 +62,8 @@ export function AnimalPage() {
   )
   if (!animal) return null
 
-  const activePregnancy = animal.gestacoes?.find((g: any) => ['SUSPEITA', 'CONFIRMADA'].includes(g.status))
-  const daysRemaining = activePregnancy ? calculateRemainingDays(new Date(activePregnancy.dpp)) : null
+  const activePregnancy = animal.pregnancies?.find((p: any) => ['SUSPECTED', 'CONFIRMED'].includes(p.status))
+  const daysRemaining = activePregnancy ? calculateRemainingDays(new Date(activePregnancy.dueDate)) : null
 
   const urgency =
     daysRemaining !== null && daysRemaining <= 3 ? 'critical' :
@@ -84,13 +84,13 @@ export function AnimalPage() {
         </button>
         <div className="flex-1 min-w-0">
           <h1 className="font-bold text-lg text-white leading-tight truncate">
-            {animal.nome ?? animal.brinco}
+            {animal.name ?? animal.earTag}
           </h1>
-          <p className="text-sm text-slate-500">Brinco #{animal.brinco} · {animal.raca ?? 'Raça não informada'}</p>
+          <p className="text-sm text-slate-500">Brinco #{animal.earTag} · {animal.breed ?? 'Raça não informada'}</p>
         </div>
       </div>
 
-      {/* Status da gestação */}
+      {/* Pregnancy status */}
       {activePregnancy && (
         <div className={`card border-l-4 ${urgencyStyle}`}>
           <div className="flex items-center justify-between gap-3">
@@ -99,7 +99,7 @@ export function AnimalPage() {
                 {PREGNANCY_STATUS_LABELS[activePregnancy.status]}
               </p>
               <p className="text-sm text-slate-400 mt-0.5">
-                DPP: <span className="text-white font-medium">{formatDate(activePregnancy.dpp)}</span>
+                DPP: <span className="text-white font-medium">{formatDate(activePregnancy.dueDate)}</span>
                 {daysRemaining !== null && (
                   <span className="ml-2 text-slate-500">({daysToText(daysRemaining)})</span>
                 )}
@@ -119,7 +119,7 @@ export function AnimalPage() {
         </div>
       )}
 
-      {/* Ações */}
+      {/* Actions */}
       <button
         onClick={() => setEventModal(true)}
         className="btn-primary w-full flex items-center justify-center gap-2"
@@ -128,27 +128,27 @@ export function AnimalPage() {
         Registrar evento
       </button>
 
-      {/* Histórico */}
+      {/* History */}
       <div className="card">
         <h2 className="font-semibold text-white mb-3">Histórico reprodutivo</h2>
-        {animal.eventos?.length === 0 ? (
+        {animal.events?.length === 0 ? (
           <p className="text-sm text-slate-600 text-center py-4">Nenhum evento registrado</p>
         ) : (
           <div className="space-y-1">
-            {animal.eventos?.map((evento: any) => (
-              <div key={evento.id} className="flex items-start gap-3 py-2.5 border-b border-white/[0.05] last:border-0">
+            {animal.events?.map((event: any) => (
+              <div key={event.id} className="flex items-start gap-3 py-2.5 border-b border-white/[0.05] last:border-0">
                 <div className="w-1.5 h-1.5 rounded-full bg-brand-500 mt-2 shrink-0" />
                 <div className="flex-1 min-w-0">
                   <div className="flex items-center justify-between gap-2">
                     <p className="text-sm font-medium text-slate-200 truncate">
-                      {EVENT_TYPE_LABELS[evento.tipo] ?? evento.tipo}
+                      {EVENT_TYPE_LABELS[event.type] ?? event.type}
                     </p>
                     <div className="flex items-center gap-2 shrink-0">
-                      <p className="text-xs text-slate-600">{formatDate(evento.dataEvento)}</p>
+                      <p className="text-xs text-slate-600">{formatDate(event.eventDate)}</p>
                       <button
                         onClick={() => {
-                          if (window.confirm(`Remover "${EVENT_TYPE_LABELS[evento.tipo] ?? evento.tipo}"?\n\nOs efeitos deste evento serão desfeitos (gestação, alertas).`)) {
-                            deleteEvent.mutate(evento.id)
+                          if (window.confirm(`Remover "${EVENT_TYPE_LABELS[event.type] ?? event.type}"?\n\nOs efeitos deste evento serão desfeitos (gestação, alertas).`)) {
+                            deleteEvent.mutate(event.id)
                           }
                         }}
                         disabled={deleteEvent.isPending}
@@ -159,13 +159,13 @@ export function AnimalPage() {
                       </button>
                     </div>
                   </div>
-                  {evento.tipo === 'DIAGNOSTICO_GESTACAO' && evento.resultado !== null && evento.resultado !== undefined && (
+                  {event.type === 'PREGNANCY_DIAGNOSIS' && event.result !== null && event.result !== undefined && (
                     <p className="text-xs text-slate-600 mt-0.5">
-                      Resultado: {evento.resultado ? '✅ Positivo' : '❌ Negativo'}
+                      Resultado: {event.result ? '✅ Positivo' : '❌ Negativo'}
                     </p>
                   )}
-                  {evento.observacoes && (
-                    <p className="text-xs text-slate-600 mt-0.5">{evento.observacoes}</p>
+                  {event.notes && (
+                    <p className="text-xs text-slate-600 mt-0.5">{event.notes}</p>
                   )}
                 </div>
               </div>
@@ -175,9 +175,9 @@ export function AnimalPage() {
       </div>
 
       {eventModal && (
-        <NovoEventoModal
+        <NewEventModal
           animalId={id!}
-          fazendaId={farmId}
+          farmId={farmId}
           onClose={() => setEventModal(false)}
         />
       )}

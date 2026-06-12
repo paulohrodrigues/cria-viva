@@ -14,7 +14,7 @@ export function LandingPage() {
           <Link to="/login" className="text-sm text-slate-400 hover:text-white transition-colors font-medium">
             Entrar
           </Link>
-          <Link to="/cadastro" className="btn-primary text-sm py-2 px-4">
+          <Link to="/register" className="btn-primary text-sm py-2 px-4">
             Criar conta grátis
           </Link>
         </div>
@@ -35,7 +35,7 @@ export function LandingPage() {
             Simples, gratuito e funciona no celular.
           </p>
           <div className="flex flex-col sm:flex-row gap-3 justify-center">
-            <Link to="/cadastro" className="btn-primary text-base px-6 py-3 rounded-xl">
+            <Link to="/register" className="btn-primary text-base px-6 py-3 rounded-xl">
               Começar agora — é grátis
             </Link>
             <a
@@ -112,7 +112,7 @@ export function LandingPage() {
               CriaViva é open source. Sem planos pagos, sem limite de animais, sem pegadinha.
               Pode usar, pode modificar, pode contribuir.
             </p>
-            <Link to="/cadastro" className="btn-primary px-6 py-2.5">
+            <Link to="/register" className="btn-primary px-6 py-2.5">
               Criar conta grátis
             </Link>
           </div>

@@ -1,66 +1,79 @@
-export type TipoFazenda = 'CORTE' | 'LEITE' | 'MISTO'
-export type PapelUsuario = 'ADMIN' | 'EDITOR' | 'VISUALIZADOR'
-export type StatusAnimal = 'ATIVA' | 'SECA' | 'DESCARTADA' | 'VENDIDA' | 'MORTA'
-export type TipoEvento = 'CIO' | 'IA' | 'MONTA' | 'DIAGNOSTICO_GESTACAO' | 'PARTO' | 'DESMAME' | 'DESCARTE'
-export type StatusGestacao = 'SUSPEITA' | 'CONFIRMADA' | 'ABORTADA' | 'CONCLUIDA'
-export type TipoAlerta = 'CIO_RETORNO' | 'PRE_PARTO_13D' | 'PRE_PARTO_7D' | 'PRE_PARTO_3D' | 'DPP' | 'POS_DPP_SEM_REGISTRO'
-export type StatusAlerta = 'PENDENTE' | 'ENVIADO' | 'FALHOU' | 'CANCELADO'
+export type FarmType = 'BEEF' | 'DAIRY' | 'MIXED'
+export type UserRole = 'ADMIN' | 'EDITOR' | 'VIEWER'
+export type AnimalStatus = 'ACTIVE' | 'DRY' | 'CULLED' | 'SOLD' | 'DEAD'
+export type EventType =
+  | 'HEAT'
+  | 'INSEMINATION'
+  | 'NATURAL_BREEDING'
+  | 'PREGNANCY_DIAGNOSIS'
+  | 'CALVING'
+  | 'WEANING'
+  | 'CULLING'
+export type PregnancyStatus = 'SUSPECTED' | 'CONFIRMED' | 'ABORTED' | 'COMPLETED'
+export type AlertType =
+  | 'HEAT_RETURN'
+  | 'PRE_CALVING_13D'
+  | 'PRE_CALVING_7D'
+  | 'PRE_CALVING_3D'
+  | 'DUE_DATE'
+  | 'OVERDUE_NO_CALVING'
+export type AlertStatus = 'PENDING' | 'SENT' | 'FAILED' | 'CANCELED'
 
-export interface Fazenda {
+export interface Farm {
   id: string
-  nome: string
-  cidade?: string
-  estado?: string
-  tipo: TipoFazenda
-  criadoEm: string
+  name: string
+  city?: string
+  state?: string
+  type: FarmType
+  createdAt: string
 }
 
 export interface Animal {
   id: string
-  fazendaId: string
-  brinco: string
-  nome?: string
-  raca?: string
-  nascimento?: string
-  pesoKg?: number
-  status: StatusAnimal
-  fotoUrl?: string
-  observacoes?: string
-  criadoEm: string
+  farmId: string
+  earTag: string
+  name?: string
+  breed?: string
+  birthDate?: string
+  weightKg?: number
+  status: AnimalStatus
+  photoUrl?: string
+  notes?: string
+  createdAt: string
   activePregnancy?: Pregnancy
 }
 
-export interface EventoReprodutivo {
+export interface ReproductiveEvent {
   id: string
   animalId: string
-  usuarioId?: string
-  tipo: TipoEvento
-  dataEvento: string
-  resultado?: boolean
-  observacoes?: string
-  dadosExtras?: Record<string, unknown>
-  criadoEm: string
+  userId?: string
+  type: EventType
+  eventDate: string
+  result?: boolean
+  notes?: string
+  extraData?: Record<string, unknown>
+  createdAt: string
 }
 
 export interface Pregnancy {
   id: string
   animalId: string
-  dataCobertura: string
-  dpp: string
-  dataPartoReal?: string
-  status: StatusGestacao
+  breedingDate: string
+  dueDate: string
+  actualCalvingDate?: string
+  status: PregnancyStatus
   daysRemaining?: number
-  criadoEm: string
+  createdAt: string
 }
 
-export interface Alerta {
+export interface Alert {
   id: string
-  gestacaoId: string
-  fazendaId: string
-  tipo: TipoAlerta
-  dataDisparo: string
-  status: StatusAlerta
-  enviadoEm?: string
+  pregnancyId: string
+  farmId: string
+  type: AlertType
+  scheduledFor: string
+  status: AlertStatus
+  sentAt?: string
 }
 
 export interface DashboardSummary {
@@ -74,10 +87,10 @@ export interface DashboardSummary {
 
 export interface AlertSummary {
   animalId: string
-  brinco: string
+  earTag: string
   animalName?: string
-  tipo: TipoAlerta
-  dpp: string
+  type: AlertType
+  dueDate: string
   daysRemaining: number
 }
 
@@ -85,7 +98,7 @@ export interface UpcomingBirth {
   animalId: string
   earTag: string
   animalName?: string
-  dpp: string
+  dueDate: string
   daysRemaining: number
-  status: StatusGestacao
+  status: PregnancyStatus
 }

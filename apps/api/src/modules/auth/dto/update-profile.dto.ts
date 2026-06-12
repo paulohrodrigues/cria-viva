@@ -4,10 +4,10 @@ export class UpdateProfileDto {
   @IsString()
   @MinLength(2)
   @MaxLength(100)
-  nome: string
+  name: string
 
   @IsString()
   @IsOptional()
   @MaxLength(20)
-  telefone?: string
+  phone?: string
 }

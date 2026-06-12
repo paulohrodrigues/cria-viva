@@ -1,14 +1,14 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { api } from '../lib/api'
 
-export function useAnimals(fazendaId: string) {
+export function useAnimals(farmId: string) {
   return useQuery({
-    queryKey: ['animais', fazendaId],
+    queryKey: ['animals', farmId],
     queryFn: async () => {
-      const { data } = await api.get(`/fazendas/${fazendaId}/animais`)
+      const { data } = await api.get(`/farms/${farmId}/animals`)
       return data
     },
-    enabled: !!fazendaId,
+    enabled: !!farmId,
   })
 }
 
@@ -16,49 +16,49 @@ export function useAnimal(id: string) {
   return useQuery({
     queryKey: ['animal', id],
     queryFn: async () => {
-      const { data } = await api.get(`/animais/${id}`)
+      const { data } = await api.get(`/animals/${id}`)
       return data
     },
     enabled: !!id,
   })
 }
 
-export function useCreateAnimal(fazendaId: string) {
+export function useCreateAnimal(farmId: string) {
   const qc = useQueryClient()
   return useMutation({
     mutationFn: async (dto: {
-      brinco: string
-      nome?: string
-      raca?: string
-      nascimento?: string
-      pesoKg?: number
+      earTag: string
+      name?: string
+      breed?: string
+      birthDate?: string
+      weightKg?: number
     }) => {
-      const { data } = await api.post(`/fazendas/${fazendaId}/animais`, dto)
+      const { data } = await api.post(`/farms/${farmId}/animals`, dto)
       return data
     },
     onSuccess: () => {
-      qc.invalidateQueries({ queryKey: ['animais', fazendaId] })
+      qc.invalidateQueries({ queryKey: ['animals', farmId] })
       qc.invalidateQueries({ queryKey: ['dashboard'] })
     },
   })
 }
 
-export function useCreateEvento(animalId: string, fazendaId: string) {
+export function useCreateEvent(animalId: string, farmId: string) {
   const qc = useQueryClient()
   return useMutation({
     mutationFn: async (dto: {
-      tipo: string
-      dataEvento: string
-      resultado?: boolean
-      observacoes?: string
-      dadosExtras?: Record<string, unknown>
+      type: string
+      eventDate: string
+      result?: boolean
+      notes?: string
+      extraData?: Record<string, unknown>
     }) => {
-      const { data } = await api.post(`/animais/${animalId}/eventos`, dto)
+      const { data } = await api.post(`/animals/${animalId}/events`, dto)
       return data
     },
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ['animal', animalId] })
-      qc.invalidateQueries({ queryKey: ['animais', fazendaId] })
+      qc.invalidateQueries({ queryKey: ['animals', farmId] })
       qc.invalidateQueries({ queryKey: ['dashboard'] })
     },
   })

@@ -3,7 +3,7 @@ import { api } from '../lib/api'
 
 interface User {
   id: string
-  nome: string
+  name: string
   email: string
 }
 
@@ -12,7 +12,7 @@ export function useAuth() {
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
-    const stored = localStorage.getItem('cv_usuario')
+    const stored = localStorage.getItem('cv_user')
     const token = localStorage.getItem('cv_token')
     if (stored && token) {
       setUser(JSON.parse(stored))
@@ -20,33 +20,33 @@ export function useAuth() {
     setLoading(false)
   }, [])
 
-  async function login(email: string, senha: string) {
-    const { data } = await api.post('/auth/login', { email, senha })
+  async function login(email: string, password: string) {
+    const { data } = await api.post('/auth/login', { email, password })
     localStorage.setItem('cv_token', data.token)
-    localStorage.setItem('cv_usuario', JSON.stringify(data.user))
+    localStorage.setItem('cv_user', JSON.stringify(data.user))
     setUser(data.user)
     return data
   }
 
-  async function register(nome: string, email: string, senha: string) {
-    const { data } = await api.post('/auth/register', { nome, email, senha })
+  async function register(name: string, email: string, password: string) {
+    const { data } = await api.post('/auth/register', { name, email, password })
     localStorage.setItem('cv_token', data.token)
-    localStorage.setItem('cv_usuario', JSON.stringify(data.user))
+    localStorage.setItem('cv_user', JSON.stringify(data.user))
     setUser(data.user)
     return data
   }
 
-  async function updateProfile(nome: string) {
-    const { data } = await api.patch('/auth/me', { nome })
+  async function updateProfile(name: string) {
+    const { data } = await api.patch('/auth/me', { name })
     const updated = { ...user!, ...data }
-    localStorage.setItem('cv_usuario', JSON.stringify(updated))
+    localStorage.setItem('cv_user', JSON.stringify(updated))
     setUser(updated)
     return data
   }
 
   function logout() {
     localStorage.removeItem('cv_token')
-    localStorage.removeItem('cv_usuario')
+    localStorage.removeItem('cv_user')
     setUser(null)
     window.location.href = '/login'
   }

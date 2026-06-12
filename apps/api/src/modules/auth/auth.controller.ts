@@ -11,14 +11,14 @@ import { CurrentUser } from './current-user.decorator'
 export class AuthController {
   constructor(private authService: AuthService) {}
 
-  // Sem verificação de email no cadastro — limite agressivo por IP compensa
+  // No email verification on signup — aggressive per-IP limit compensates
   @Post('register')
   @Throttle({ default: { limit: 5, ttl: 86_400_000 } })
   register(@Body() dto: RegisterDto) {
     return this.authService.register(dto)
   }
 
-  // Mitigação de brute-force de credenciais
+  // Credential brute-force mitigation
   @Post('login')
   @Throttle({ default: { limit: 10, ttl: 60_000 } })
   login(@Body() dto: LoginDto) {

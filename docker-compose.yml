@@ -1,5 +1,5 @@
 services:
-  # ─── Infraestrutura ────────────────────────────────────────────
+  # ─── Infrastructure ────────────────────────────────────────────
   mariadb:
     image: mariadb:lts
     container_name: cria-viva-db
@@ -21,7 +21,7 @@ services:
   redis:
     image: redis:7-alpine
     container_name: cria-viva-redis
-    # Porta não exposta ao host — API acessa via rede interna Docker
+    # Port not exposed to the host — the API reaches it through Docker's internal network
     volumes:
       - redis_data:/data
     healthcheck:
@@ -30,7 +30,7 @@ services:
       timeout: 3s
       retries: 10
 
-  # ─── Aplicação ─────────────────────────────────────────────────
+  # ─── Application ─────────────────────────────────────────────────
   api:
     container_name: cria-viva-api
     build:
@@ -46,9 +46,9 @@ services:
       JWT_SECRET: dev-secret-local
       FRONTEND_URL: http://localhost:3001
       PORT: 3001
-      # Chaves VAPID vêm do .env (gitignored) — gere as suas com:
+      # VAPID keys come from .env (gitignored) — generate yours with:
       #   npx web-push generate-vapid-keys
-      # Sem elas a API sobe normalmente, apenas com push desabilitado.
+      # Without them the API still starts, just with push disabled.
       VAPID_PUBLIC_KEY: ${VAPID_PUBLIC_KEY:-}
       VAPID_PRIVATE_KEY: ${VAPID_PRIVATE_KEY:-}
       VAPID_EMAIL: ${VAPID_EMAIL:-mailto:dev@localhost}
@@ -72,7 +72,7 @@ services:
     ports:
       - '3001:3000'
     environment:
-      # Dentro do Docker o proxy aponta para o serviço "api" via rede interna
+      # Inside Docker the proxy targets the "api" service through the internal network
       VITE_API_TARGET: http://api:3001
     volumes:
       - ./packages:/app/packages

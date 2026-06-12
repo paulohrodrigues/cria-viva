@@ -12,7 +12,7 @@ class PushKeysDto {
 }
 
 class SubscribeDto {
-  // Push services (FCM, Mozilla, WNS) sempre usam HTTPS; 500 = limite da coluna
+  // Push services (FCM, Mozilla, WNS) always use HTTPS; 500 = column limit
   @IsUrl({ require_protocol: true, protocols: ['https'] })
   @MaxLength(500)
   endpoint: string
@@ -36,7 +36,6 @@ export class PushController {
   getVapidKey() {
     return { publicKey: this.config.get<string>('VAPID_PUBLIC_KEY') ?? '' }
   }
-
 
   @Post('subscribe')
   async subscribe(

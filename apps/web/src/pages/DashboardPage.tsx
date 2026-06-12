@@ -72,7 +72,7 @@ export function DashboardPage() {
             {urgent.map((birth: any) => (
               <button
                 key={birth.animalId}
-                onClick={() => navigate(`/animais/${birth.animalId}`)}
+                onClick={() => navigate(`/animals/${birth.animalId}`)}
                 className="w-full flex items-center justify-between p-3 rounded-xl bg-white/[0.04] hover:bg-white/[0.07] transition-colors text-left"
               >
                 <div>
@@ -80,7 +80,7 @@ export function DashboardPage() {
                     {birth.animalName ? `${birth.animalName} ` : ''}
                     <span className="text-slate-500 font-normal">#{birth.earTag}</span>
                   </p>
-                  <p className="text-xs text-slate-600 mt-0.5">DPP: {formatDate(birth.dpp)}</p>
+                  <p className="text-xs text-slate-600 mt-0.5">DPP: {formatDate(birth.dueDate)}</p>
                 </div>
                 <span className={urgencyToBadge(birth.urgency)}>
                   {daysToText(birth.daysRemaining)}
@@ -104,14 +104,14 @@ export function DashboardPage() {
             {summary.upcomingBirths.map((birth: any) => (
               <button
                 key={birth.animalId}
-                onClick={() => navigate(`/animais/${birth.animalId}`)}
+                onClick={() => navigate(`/animals/${birth.animalId}`)}
                 className="w-full flex items-center justify-between py-3 border-b border-white/[0.05] last:border-0 text-left hover:bg-white/[0.03] transition-colors rounded-lg px-1"
               >
                 <div>
                   <p className="text-sm font-medium text-slate-100">
                     {birth.animalName ?? birth.earTag}
                   </p>
-                  <p className="text-xs text-slate-600">{formatDate(birth.dpp)}</p>
+                  <p className="text-xs text-slate-600">{formatDate(birth.dueDate)}</p>
                 </div>
                 <span className={cn('text-xs font-semibold', {
                   'text-red-400': birth.daysRemaining <= 3,

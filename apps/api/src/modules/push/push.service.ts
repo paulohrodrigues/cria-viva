@@ -32,23 +32,23 @@ export class PushService implements OnModuleInit {
     this.logger.log('Web Push configured')
   }
 
-  async subscribe(usuarioId: string, endpoint: string, p256dh: string, auth: string) {
+  async subscribe(userId: string, endpoint: string, p256dh: string, auth: string) {
     await this.prisma.pushSubscription.upsert({
       where: { endpoint },
-      update: { p256dh, auth, usuarioId },
-      create: { usuarioId, endpoint, p256dh, auth },
+      update: { p256dh, auth, userId },
+      create: { userId, endpoint, p256dh, auth },
     })
   }
 
-  async unsubscribe(usuarioId: string, endpoint: string) {
+  async unsubscribe(userId: string, endpoint: string) {
     await this.prisma.pushSubscription.deleteMany({
-      where: { usuarioId, endpoint },
+      where: { userId, endpoint },
     })
   }
 
-  async sendToUser(usuarioId: string, payload: PushPayload) {
+  async sendToUser(userId: string, payload: PushPayload) {
     const subscriptions = await this.prisma.pushSubscription.findMany({
-      where: { usuarioId },
+      where: { userId },
     })
     if (subscriptions.length === 0) return { sent: 0 }
 
@@ -56,19 +56,19 @@ export class PushService implements OnModuleInit {
     return { sent }
   }
 
-  async sendToFarm(fazendaId: string, payload: PushPayload) {
-    const members = await this.prisma.usuarioFazenda.findMany({
-      where: { fazendaId },
-      select: { usuarioId: true },
+  async sendToFarm(farmId: string, payload: PushPayload) {
+    const members = await this.prisma.farmMember.findMany({
+      where: { farmId },
+      select: { userId: true },
     })
-    const userIds = members.map((m) => m.usuarioId)
+    const userIds = members.map((m) => m.userId)
 
     const subscriptions = await this.prisma.pushSubscription.findMany({
-      where: { usuarioId: { in: userIds } },
+      where: { userId: { in: userIds } },
     })
 
     if (subscriptions.length === 0) {
-      this.logger.log(`No push subscriptions for farm ${fazendaId}`)
+      this.logger.log(`No push subscriptions for farm ${farmId}`)
       return
     }
 
@@ -91,8 +91,8 @@ export class PushService implements OnModuleInit {
       ),
     )
 
-    // 404/410: endpoint expirado ou cancelado; 403: subscription criada com
-    // outra chave VAPID (rotação de chave) — nos três casos nunca mais funciona.
+    // 404/410: endpoint expired or unsubscribed; 403: subscription created
+    // with a different VAPID key (key rotation) — none of them will ever work again.
     const deadEndpoints = results
       .map((result, i) => {
         if (result.status !== 'rejected') return null

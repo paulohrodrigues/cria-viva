@@ -4,18 +4,18 @@ import { useCreateFarm } from '../hooks/useFarm'
 import { useCurrentFarm } from '../store/currentFarm'
 import toast from 'react-hot-toast'
 
-const ESTADOS_BR = ['AC','AL','AM','AP','BA','CE','DF','ES','GO','MA','MG','MS','MT','PA','PB','PE','PI','PR','RJ','RN','RO','RR','RS','SC','SE','SP','TO']
+const BR_STATES = ['AC','AL','AM','AP','BA','CE','DF','ES','GO','MA','MG','MS','MT','PA','PB','PE','PI','PR','RJ','RN','RO','RR','RS','SC','SE','SP','TO']
 
 interface FormData {
-  nome: string
-  cidade: string
-  estado: string
-  tipo: string
+  name: string
+  city: string
+  state: string
+  type: string
 }
 
 export function OnboardingPage() {
   const { register, handleSubmit, formState: { isSubmitting } } = useForm<FormData>({
-    defaultValues: { tipo: 'CORTE' },
+    defaultValues: { type: 'BEEF' },
   })
   const createFarm = useCreateFarm()
   const { setFarm } = useCurrentFarm()
@@ -46,7 +46,7 @@ export function OnboardingPage() {
             <div>
               <label className="label">Nome da fazenda *</label>
               <input
-                {...register('nome', { required: true })}
+                {...register('name', { required: true })}
                 placeholder="Ex: Fazenda Boa Esperança"
                 className="input"
               />
@@ -55,23 +55,23 @@ export function OnboardingPage() {
             <div className="grid grid-cols-2 gap-3">
               <div>
                 <label className="label">Cidade</label>
-                <input {...register('cidade')} placeholder="Uberaba" className="input" />
+                <input {...register('city')} placeholder="Uberaba" className="input" />
               </div>
               <div>
                 <label className="label">Estado</label>
-                <select {...register('estado')} className="input">
+                <select {...register('state')} className="input">
                   <option value="">--</option>
-                  {ESTADOS_BR.map(e => <option key={e} value={e}>{e}</option>)}
+                  {BR_STATES.map(s => <option key={s} value={s}>{s}</option>)}
                 </select>
               </div>
             </div>
 
             <div>
               <label className="label">Tipo de pecuária</label>
-              <select {...register('tipo')} className="input">
-                <option value="CORTE">Corte</option>
-                <option value="LEITE">Leite</option>
-                <option value="MISTO">Misto</option>
+              <select {...register('type')} className="input">
+                <option value="BEEF">Corte</option>
+                <option value="DAIRY">Leite</option>
+                <option value="MIXED">Misto</option>
               </select>
             </div>
 

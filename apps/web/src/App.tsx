@@ -4,14 +4,14 @@ import { AppShell } from './components/layout/AppShell'
 import { LoginPage } from './pages/LoginPage'
 import { RegisterPage } from './pages/RegisterPage'
 import { DashboardPage } from './pages/DashboardPage'
-import { AnimaisPage } from './pages/AnimaisPage'
+import { AnimalsPage } from './pages/AnimalsPage'
 import { AnimalPage } from './pages/AnimalPage'
-import { RelatoriosPage } from './pages/RelatoriosPage'
-import { ConfiguracoesPage } from './pages/ConfiguracoesPage'
+import { ReportsPage } from './pages/ReportsPage'
+import { SettingsPage } from './pages/SettingsPage'
 import { OnboardingPage } from './pages/OnboardingPage'
 import { LandingPage } from './pages/LandingPage'
 
-function RotaPrivada({ children }: { children: React.ReactNode }) {
+function PrivateRoute({ children }: { children: React.ReactNode }) {
   const { user, loading } = useAuth()
   if (loading) return <div className="flex items-center justify-center h-screen"><span className="text-brand-500">Carregando...</span></div>
   if (!user) return <Navigate to="/" replace />
@@ -30,14 +30,14 @@ export default function App() {
     <Routes>
       <Route path="/" element={<RootRoute />} />
       <Route path="/login" element={<LoginPage />} />
-      <Route path="/cadastro" element={<RegisterPage />} />
-      <Route path="/onboarding" element={<RotaPrivada><OnboardingPage /></RotaPrivada>} />
-      <Route path="/" element={<RotaPrivada><AppShell /></RotaPrivada>}>
+      <Route path="/register" element={<RegisterPage />} />
+      <Route path="/onboarding" element={<PrivateRoute><OnboardingPage /></PrivateRoute>} />
+      <Route path="/" element={<PrivateRoute><AppShell /></PrivateRoute>}>
         <Route path="dashboard" element={<DashboardPage />} />
-        <Route path="animais" element={<AnimaisPage />} />
-        <Route path="animais/:id" element={<AnimalPage />} />
-        <Route path="relatorios" element={<RelatoriosPage />} />
-        <Route path="configuracoes" element={<ConfiguracoesPage />} />
+        <Route path="animals" element={<AnimalsPage />} />
+        <Route path="animals/:id" element={<AnimalPage />} />
+        <Route path="reports" element={<ReportsPage />} />
+        <Route path="settings" element={<SettingsPage />} />
       </Route>
     </Routes>
   )

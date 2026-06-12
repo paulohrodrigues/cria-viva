@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react'
 
-const STORAGE_KEY = 'cv_fazenda_id'
+const STORAGE_KEY = 'cv_farm_id'
 
 let listeners: Array<(id: string) => void> = []
 let currentId = localStorage.getItem(STORAGE_KEY) ?? ''

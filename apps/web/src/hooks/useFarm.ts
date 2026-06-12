@@ -3,9 +3,9 @@ import { api } from '../lib/api'
 
 export function useFarms() {
   return useQuery({
-    queryKey: ['fazendas'],
+    queryKey: ['farms'],
     queryFn: async () => {
-      const { data } = await api.get('/fazendas')
+      const { data } = await api.get('/farms')
       return data
     },
   })
@@ -15,7 +15,7 @@ export function useDashboard(farmId: string) {
   return useQuery({
     queryKey: ['dashboard', farmId],
     queryFn: async () => {
-      const { data } = await api.get(`/fazendas/${farmId}/dashboard`)
+      const { data } = await api.get(`/farms/${farmId}/dashboard`)
       return data
     },
     enabled: !!farmId,
@@ -26,10 +26,10 @@ export function useDashboard(farmId: string) {
 export function useCreateFarm() {
   const qc = useQueryClient()
   return useMutation({
-    mutationFn: async (dto: { nome: string; cidade?: string; estado?: string; tipo?: string }) => {
-      const { data } = await api.post('/fazendas', dto)
+    mutationFn: async (dto: { name: string; city?: string; state?: string; type?: string }) => {
+      const { data } = await api.post('/farms', dto)
       return data
     },
-    onSuccess: () => qc.invalidateQueries({ queryKey: ['fazendas'] }),
+    onSuccess: () => qc.invalidateQueries({ queryKey: ['farms'] }),
   })
 }

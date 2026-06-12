@@ -13,12 +13,12 @@ export function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs))
 }
 
-export function formatDate(data: string | Date): string {
-  return dayjs.utc(data).format('DD/MM/YYYY')
+export function formatDate(date: string | Date): string {
+  return dayjs.utc(date).format('DD/MM/YYYY')
 }
 
-export function formatRelativeDate(data: string | Date): string {
-  return dayjs(data).fromNow()
+export function formatRelativeDate(date: string | Date): string {
+  return dayjs(date).fromNow()
 }
 
 export function daysToText(days: number): string {
@@ -30,10 +30,10 @@ export function daysToText(days: number): string {
 
 export function urgencyToBadge(urgency: string): string {
   const map: Record<string, string> = {
-    critico: 'badge-critico',
-    alto: 'badge-alto',
-    medio: 'badge-medio',
-    baixo: 'badge-ok',
+    critical: 'badge-critical',
+    high: 'badge-high',
+    medium: 'badge-medium',
+    low: 'badge-ok',
   }
   return map[urgency] ?? 'badge-ok'
 }

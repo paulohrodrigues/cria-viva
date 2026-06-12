@@ -5,7 +5,7 @@ import toast from 'react-hot-toast'
 
 interface FormData {
   email: string
-  senha: string
+  password: string
 }
 
 export function LoginPage() {
@@ -15,7 +15,7 @@ export function LoginPage() {
 
   async function onSubmit(data: FormData) {
     try {
-      await login(data.email, data.senha)
+      await login(data.email, data.password)
       navigate('/dashboard')
     } catch {
       toast.error('Email ou senha incorretos')
@@ -49,12 +49,12 @@ export function LoginPage() {
               <label className="label">Senha</label>
               <input
                 type="password"
-                {...register('senha', { required: 'Informe a senha' })}
+                {...register('password', { required: 'Informe a senha' })}
                 placeholder="••••••••"
                 className="input"
                 autoComplete="current-password"
               />
-              {errors.senha && <p className="text-xs text-red-500 mt-1">{errors.senha.message}</p>}
+              {errors.password && <p className="text-xs text-red-500 mt-1">{errors.password.message}</p>}
             </div>
 
             <button type="submit" disabled={isSubmitting} className="btn-primary w-full text-center mt-2">
@@ -65,7 +65,7 @@ export function LoginPage() {
 
         <p className="text-center text-sm text-slate-600 mt-4">
           Não tem conta?{' '}
-          <Link to="/cadastro" className="text-brand-400 font-medium hover:text-brand-300">
+          <Link to="/register" className="text-brand-400 font-medium hover:text-brand-300">
             Criar conta grátis
           </Link>
         </p>

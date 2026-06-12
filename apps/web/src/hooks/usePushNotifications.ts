@@ -16,9 +16,9 @@ function keysEqual(current: ArrayBuffer | null, expected: Uint8Array) {
   return bytes.length === expected.length && bytes.every((b, i) => b === expected[i])
 }
 
-// Garante uma subscription válida para a chave VAPID atual do servidor.
-// Se a subscription existente foi criada com outra chave (rotação), ela é
-// descartada e refeita — subscribe() com chave diferente lança InvalidStateError.
+// Ensures a subscription valid for the server's current VAPID key.
+// If the existing subscription was created with a different key (rotation),
+// it is discarded and recreated — subscribe() with a different key throws InvalidStateError.
 async function ensureSubscription(reg: ServiceWorkerRegistration) {
   const { data } = await api.get('/push/vapid-key')
   if (!data.publicKey) return
@@ -90,8 +90,8 @@ export function usePushNotifications() {
     }
   }
 
-  // Auto-register SW on mount (does not request permission). Se o usuário já
-  // era inscrito, re-sincroniza em silêncio — cobre rotação da chave VAPID.
+  // Auto-register SW on mount (does not request permission). If the user was
+  // already subscribed, resync silently — covers VAPID key rotation.
   useEffect(() => {
     if (!supported) return
     navigator.serviceWorker

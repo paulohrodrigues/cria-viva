@@ -9,10 +9,10 @@ import { PrismaExceptionFilter } from './shared/filters/prisma-exception.filter'
 async function bootstrap() {
   const app = await NestFactory.create<NestExpressApplication>(AppModule)
 
-  // Heroku/proxies: necessário para o rate limit enxergar o IP real do cliente
+  // Heroku/proxies: required so rate limiting sees the real client IP
   app.set('trust proxy', 1)
 
-  // CSP desabilitado: o SPA é servido pelo mesmo processo e o Vite injeta inline scripts
+  // CSP disabled: the SPA is served by the same process and Vite injects inline scripts
   app.use(helmet({ contentSecurityPolicy: false }))
 
   app.setGlobalPrefix('api')
@@ -32,12 +32,12 @@ async function bootstrap() {
     credentials: true,
   })
 
-  // Garante desconexão limpa do Prisma/Redis quando o Heroku envia SIGTERM
+  // Ensures clean Prisma/Redis disconnect when Heroku sends SIGTERM
   app.enableShutdownHooks()
 
   const port = process.env.PORT ?? 3001
   await app.listen(port, '0.0.0.0')
-  Logger.log(`CriaViva API rodando na porta ${port}`, 'Bootstrap')
+  Logger.log(`CriaViva API listening on port ${port}`, 'Bootstrap')
 }
 
 bootstrap()

@@ -8,13 +8,13 @@ import { BullModule } from '@nestjs/bullmq'
 import { ThrottlerModule, ThrottlerGuard } from '@nestjs/throttler'
 import { ServeStaticModule } from '@nestjs/serve-static'
 import { PrismaModule } from './shared/prisma/prisma.module'
-import { FarmAccessModule } from './shared/acesso/farm-access.module'
+import { FarmAccessModule } from './shared/access/farm-access.module'
 import { AuthModule } from './modules/auth/auth.module'
-import { FazendasModule } from './modules/fazendas/fazendas.module'
-import { AnimaisModule } from './modules/animais/animais.module'
-import { EventosModule } from './modules/eventos/eventos.module'
-import { AlertasModule } from './modules/alertas/alertas.module'
-import { RelatoriosModule } from './modules/relatorios/relatorios.module'
+import { FarmsModule } from './modules/farms/farms.module'
+import { AnimalsModule } from './modules/animals/animals.module'
+import { EventsModule } from './modules/events/events.module'
+import { AlertsModule } from './modules/alerts/alerts.module'
+import { ReportsModule } from './modules/reports/reports.module'
 import { PushModule } from './modules/push/push.module'
 
 const webDistPath = join(__dirname, '..', '..', '..', 'apps', 'web', 'dist')
@@ -44,16 +44,16 @@ const webDistPath = join(__dirname, '..', '..', '..', 'apps', 'web', 'dist')
         }
       })(),
     }),
-    // Limite global; rotas sensíveis (login/registro) têm overrides via @Throttle
+    // Global limit; sensitive routes (login/register) have overrides via @Throttle
     ThrottlerModule.forRoot([{ ttl: 60_000, limit: 100 }]),
     PrismaModule,
     FarmAccessModule,
     AuthModule,
-    FazendasModule,
-    AnimaisModule,
-    EventosModule,
-    AlertasModule,
-    RelatoriosModule,
+    FarmsModule,
+    AnimalsModule,
+    EventsModule,
+    AlertsModule,
+    ReportsModule,
     PushModule,
   ],
   providers: [{ provide: APP_GUARD, useClass: ThrottlerGuard }],

@@ -16,7 +16,7 @@ api.interceptors.response.use(
   (err) => {
     if (err.response?.status === 401) {
       localStorage.removeItem('cv_token')
-      localStorage.removeItem('cv_usuario')
+      localStorage.removeItem('cv_user')
       window.location.href = '/login'
     }
     return Promise.reject(err)

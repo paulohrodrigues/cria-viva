@@ -1,13 +1,13 @@
 import { Outlet, NavLink } from 'react-router-dom'
 import { Home, List, BarChart2, Settings } from 'lucide-react'
 import { cn } from '../../lib/utils'
-import { FazendaSelector } from './FazendaSelector'
+import { FarmSelector } from './FarmSelector'
 
 const navItems = [
   { to: '/dashboard', icon: Home, label: 'Início' },
-  { to: '/animais', icon: List, label: 'Animais' },
-  { to: '/relatorios', icon: BarChart2, label: 'Relatórios' },
-  { to: '/configuracoes', icon: Settings, label: 'Config.' },
+  { to: '/animals', icon: List, label: 'Animais' },
+  { to: '/reports', icon: BarChart2, label: 'Relatórios' },
+  { to: '/settings', icon: Settings, label: 'Config.' },
 ]
 
 export function AppShell() {
@@ -22,7 +22,7 @@ export function AppShell() {
             </div>
             <span className="font-bold text-white text-lg tracking-tight">CriaViva</span>
           </div>
-          <FazendaSelector />
+          <FarmSelector />
         </div>
       </header>
 

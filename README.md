@@ -70,7 +70,7 @@ flowchart LR
     QUEUE -->|consome| REDIS
     QUEUE -->|"web-push (VAPID)"| PUSHSVC
     PUSHSVC -->|notificação| PWA
-    SCHED -->|"POST /api/alertas/processar<br/>(x-cron-secret)"| API
+    SCHED -->|"POST /api/alerts/process<br/>(x-cron-secret)"| API
 ```
 
 Em produção **um único processo** serve tudo: o NestJS expõe a API em `/api/*` e entrega o build do React para as demais rotas (via `@nestjs/serve-static`). Isso permite rodar no plano básico do Heroku com um só dyno.
@@ -79,31 +79,31 @@ Em produção **um único processo** serve tudo: o NestJS expõe a API em `/api/
 
 ```mermaid
 erDiagram
-    USUARIO ||--o{ USUARIO_FAZENDA : "participa"
-    FAZENDA ||--o{ USUARIO_FAZENDA : "tem membros"
-    FAZENDA ||--o{ ANIMAL : "possui"
-    ANIMAL ||--o{ EVENTO_REPRODUTIVO : "histórico"
-    ANIMAL ||--o{ GESTACAO : "gestações"
-    EVENTO_REPRODUTIVO |o--o| GESTACAO : "cobertura origina"
-    GESTACAO ||--o{ ALERTA : "gera"
-    FAZENDA ||--o{ ALERTA : "recebe"
-    USUARIO ||--o{ PUSH_SUBSCRIPTION : "dispositivos"
+    USER ||--o{ FARM_MEMBER : "participa"
+    FARM ||--o{ FARM_MEMBER : "tem membros"
+    FARM ||--o{ ANIMAL : "possui"
+    ANIMAL ||--o{ REPRODUCTIVE_EVENT : "histórico"
+    ANIMAL ||--o{ PREGNANCY : "gestações"
+    REPRODUCTIVE_EVENT |o--o| PREGNANCY : "cobertura origina"
+    PREGNANCY ||--o{ ALERT : "gera"
+    FARM ||--o{ ALERT : "recebe"
+    USER ||--o{ PUSH_SUBSCRIPTION : "dispositivos"
 
-    USUARIO_FAZENDA {
-        enum papel "ADMIN | EDITOR | VISUALIZADOR"
+    FARM_MEMBER {
+        enum role "ADMIN | EDITOR | VIEWER"
     }
     ANIMAL {
-        string brinco "único por fazenda"
-        enum status "ATIVA | SECA | DESCARTADA | VENDIDA | MORTA"
+        string earTag "único por fazenda"
+        enum status "ACTIVE | DRY | CULLED | SOLD | DEAD"
     }
-    GESTACAO {
-        date dataCobertura
-        date dpp "cobertura + 283 dias"
-        enum status "SUSPEITA | CONFIRMADA | ABORTADA | CONCLUIDA"
+    PREGNANCY {
+        date breedingDate
+        date dueDate "cobertura + 283 dias"
+        enum status "SUSPECTED | CONFIRMED | ABORTED | COMPLETED"
     }
-    ALERTA {
-        enum tipo "PRE_PARTO_13D | 7D | 3D | DPP | POS_DPP_SEM_REGISTRO"
-        enum status "PENDENTE | ENVIADO | FALHOU | CANCELADO"
+    ALERT {
+        enum type "PRE_CALVING_13D | 7D | 3D | DUE_DATE | OVERDUE_NO_CALVING"
+        enum status "PENDING | SENT | FAILED | CANCELED"
     }
 ```
 
@@ -112,34 +112,34 @@ erDiagram
 ```mermaid
 sequenceDiagram
     participant S as Heroku Scheduler
-    participant A as AlertasService
+    participant A as AlertsService
     participant Q as Fila BullMQ (Redis)
-    participant P as AlertasProcessor
+    participant P as AlertsProcessor
     participant W as web-push
     participant C as Celular do produtor
 
-    S->>A: POST /api/alertas/processar (x-cron-secret)
+    S->>A: POST /api/alerts/process (x-cron-secret)
     A->>A: busca gestações ativas e calcula dias até a DPP
     alt dias ∈ {13, 7, 3, 0, -3} e alerta ainda não enviado
-        A->>Q: enfileira job "enviar-push"
+        A->>Q: enfileira job "send-push"
         Q->>P: entrega o job
         P->>W: sendNotification para cada dispositivo da fazenda
         W->>C: 🔔 "Parto em 3 dias — Mimosa (001)"
-        P->>P: marca alerta como ENVIADO
+        P->>P: marca alerta como SENT
     end
 ```
 
 ### Eventos reprodutivos — máquina de estados
 
-Cada tipo de evento tem um *handler* dedicado (`apps/api/src/modules/eventos/handlers/`) que valida o estado reprodutivo do animal antes de aplicar efeitos:
+Cada tipo de evento tem um *handler* dedicado (`apps/api/src/modules/events/handlers/`) que valida o estado reprodutivo do animal antes de aplicar efeitos:
 
 | Evento | Pré-condição | Efeito |
 |---|---|---|
-| `IA` / `MONTA` | sem gestação ativa | cria gestação `SUSPEITA` com DPP calculada |
-| `DIAGNOSTICO_GESTACAO` (+) | gestação ativa | confirma a gestação |
-| `DIAGNOSTICO_GESTACAO` (−) | gestação ativa | aborta e cancela alertas |
-| `PARTO` | gestação ativa há ≥ 240 dias | conclui a gestação, registra data real |
-| `CIO`, `DESMAME`, `DESCARTE` | — | registro no histórico |
+| `INSEMINATION` / `NATURAL_BREEDING` | sem gestação ativa | cria gestação `SUSPECTED` com DPP calculada |
+| `PREGNANCY_DIAGNOSIS` (+) | gestação ativa | confirma a gestação |
+| `PREGNANCY_DIAGNOSIS` (−) | gestação ativa | aborta e cancela alertas |
+| `CALVING` | gestação ativa há ≥ 240 dias | conclui a gestação, registra data real |
+| `HEAT`, `WEANING`, `CULLING` | — | registro no histórico |
 
 Apagar um evento executa o `revert()` do handler — ex.: apagar uma IA remove a gestação e os alertas criados por ela.
 
@@ -188,11 +188,11 @@ O compose já injeta as variáveis de desenvolvimento. Para habilitar push notif
 # 2. Registre uma IA e um diagnóstico positivo no animal
 # 3. Ajuste a DPP para hoje direto no banco:
 docker exec cria-viva-db mariadb -ucriaviva -pcriaviva123 criaviva_dev \
-  -e "UPDATE gestacoes SET dpp = CURDATE() WHERE status = 'CONFIRMADA';"
+  -e "UPDATE pregnancies SET due_date = CURDATE() WHERE status = 'CONFIRMED';"
 
 # 4. Ative as notificações na página Configurações (o navegador pedirá permissão)
 # 5. Dispare o processamento (mesma chamada que o cron faz em produção):
-curl -X POST http://localhost:3002/api/alertas/processar \
+curl -X POST http://localhost:3002/api/alerts/process \
   -H "x-cron-secret: criaviva-cron-dev-2026"
 ```
 
@@ -207,7 +207,7 @@ Veja `apps/api/.env.example`. Resumo:
 | `DATABASE_URL` | ✅ | `mysql://user:senha@host:3306/banco` |
 | `JWT_SECRET` | ✅ | A API **não sobe** sem ela. Gere com `openssl rand -hex 32` |
 | `REDIS_URL` ou `REDIS_HOST`/`REDIS_PORT` | ✅ | Conexão do BullMQ (URL tem precedência; `rediss://` ativa TLS) |
-| `CRON_SECRET` | ✅ | Autoriza o `POST /api/alertas/processar` |
+| `CRON_SECRET` | ✅ | Autoriza o `POST /api/alerts/process` |
 | `VAPID_PUBLIC_KEY` / `VAPID_PRIVATE_KEY` | ✅ | Identidade Web Push. Gere com `npx web-push generate-vapid-keys` |
 | `VAPID_EMAIL` | ✅ | Contato exigido pelo protocolo (`mailto:...`) |
 | `FRONTEND_URL` | ✅ | Origem permitida no CORS |
@@ -223,7 +223,7 @@ Veja `apps/api/.env.example`. Resumo:
 4. Config Vars: copie `JAWSDB_MARIA_URL` para `DATABASE_URL` e defina as demais variáveis da tabela acima.
 5. Add-on **Heroku Scheduler** com um job diário:
    ```bash
-   curl -s -X POST https://SEU_APP.herokuapp.com/api/alertas/processar -H "x-cron-secret: $CRON_SECRET"
+   curl -s -X POST https://SEU_APP.herokuapp.com/api/alerts/process -H "x-cron-secret: $CRON_SECRET"
    ```
 
 O `heroku-postbuild` compila shared → web → api, e a fase `release` do Procfile aplica as migrations (`prisma migrate deploy`) antes de cada nova versão entrar no ar.
@@ -258,9 +258,9 @@ Contribuições são muito bem-vindas!
 2. Faça o fork e crie um branch: `git checkout -b feat/minha-feature`.
 3. Suba o ambiente com `docker compose up -d` e desenvolva com hot-reload.
 4. Siga os padrões do projeto:
-   - Commits no formato [Conventional Commits](https://www.conventionalcommits.org/pt-br/) (`feat:`, `fix:`, `chore:`...), mensagem em português.
-   - Domínio em português (fazenda, gestação, brinco) — é o vocabulário do usuário final.
-   - Novos eventos reprodutivos = novo handler em `eventos/handlers/` implementando `EventHandler` (`validate` / `apply` / `revert`) e registro no `EventHandlerRegistry`.
+   - Commits no formato [Conventional Commits](https://www.conventionalcommits.org/pt-br/) (`feat:`, `fix:`, `chore:`...).
+   - **Código 100% em inglês** (tabelas, variáveis, rotas, comentários). Português apenas em textos exibidos ao usuário no front e neste README.
+   - Novos eventos reprodutivos = novo handler em `events/handlers/` implementando `EventHandler` (`validate` / `apply` / `revert`) e registro no `EventHandlerRegistry`.
    - Toda rota nova de dados deve passar pelo `FarmAccessService`.
 5. Abra o Pull Request explicando **o que** e **por quê**.
 

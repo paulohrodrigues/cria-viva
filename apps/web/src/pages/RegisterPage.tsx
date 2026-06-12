@@ -4,9 +4,9 @@ import { useAuth } from '../hooks/useAuth'
 import toast from 'react-hot-toast'
 
 interface FormData {
-  nome: string
+  name: string
   email: string
-  senha: string
+  password: string
 }
 
 export function RegisterPage() {
@@ -16,7 +16,7 @@ export function RegisterPage() {
 
   async function onSubmit(data: FormData) {
     try {
-      await registerUser(data.nome, data.email, data.senha)
+      await registerUser(data.name, data.email, data.password)
       navigate('/onboarding')
     } catch (err: any) {
       toast.error(err?.response?.data?.message ?? 'Erro ao criar conta')
@@ -37,11 +37,11 @@ export function RegisterPage() {
             <div>
               <label className="label">Nome *</label>
               <input
-                {...register('nome', { required: 'Informe seu nome' })}
+                {...register('name', { required: 'Informe seu nome' })}
                 placeholder="João Silva"
                 className="input"
               />
-              {errors.nome && <p className="text-xs text-red-500 mt-1">{errors.nome.message}</p>}
+              {errors.name && <p className="text-xs text-red-500 mt-1">{errors.name.message}</p>}
             </div>
 
             <div>
@@ -59,11 +59,11 @@ export function RegisterPage() {
               <label className="label">Senha *</label>
               <input
                 type="password"
-                {...register('senha', { required: true, minLength: { value: 8, message: 'Mínimo 8 caracteres' } })}
+                {...register('password', { required: true, minLength: { value: 8, message: 'Mínimo 8 caracteres' } })}
                 placeholder="Mínimo 8 caracteres"
                 className="input"
               />
-              {errors.senha && <p className="text-xs text-red-500 mt-1">{errors.senha.message}</p>}
+              {errors.password && <p className="text-xs text-red-500 mt-1">{errors.password.message}</p>}
             </div>
 
             <button type="submit" disabled={isSubmitting} className="btn-primary w-full mt-2">

@@ -1,4 +1,4 @@
-import { Injectable, UnauthorizedException, ConflictException, BadRequestException } from '@nestjs/common'
+import { Injectable, UnauthorizedException, ConflictException } from '@nestjs/common'
 import { JwtService } from '@nestjs/jwt'
 import * as bcrypt from 'bcrypt'
 import { PrismaService } from '../../shared/prisma/prisma.service'
@@ -14,42 +14,41 @@ export class AuthService {
   ) {}
 
   async register(dto: RegisterDto) {
-    const existing = await this.prisma.usuario.findUnique({ where: { email: dto.email } })
+    const existing = await this.prisma.user.findUnique({ where: { email: dto.email } })
     if (existing) throw new ConflictException('Email já cadastrado')
 
-    const passwordHash = await bcrypt.hash(dto.senha, 12)
-    const user = await this.prisma.usuario.create({
-      data: { nome: dto.nome, email: dto.email, telefone: dto.telefone, senhaHash: passwordHash },
+    const passwordHash = await bcrypt.hash(dto.password, 12)
+    const user = await this.prisma.user.create({
+      data: { name: dto.name, email: dto.email, phone: dto.phone, passwordHash },
     })
 
     const token = this.jwt.sign({ sub: user.id, email: user.email })
-    return { token, user: { id: user.id, nome: user.nome, email: user.email } }
+    return { token, user: { id: user.id, name: user.name, email: user.email } }
   }
 
   async login(dto: LoginDto) {
-    const user = await this.prisma.usuario.findUnique({ where: { email: dto.email } })
+    const user = await this.prisma.user.findUnique({ where: { email: dto.email } })
     if (!user) throw new UnauthorizedException('Credenciais inválidas')
 
-    const valid = await bcrypt.compare(dto.senha, user.senhaHash)
+    const valid = await bcrypt.compare(dto.password, user.passwordHash)
     if (!valid) throw new UnauthorizedException('Credenciais inválidas')
 
     const token = this.jwt.sign({ sub: user.id, email: user.email })
-    return { token, user: { id: user.id, nome: user.nome, email: user.email } }
+    return { token, user: { id: user.id, name: user.name, email: user.email } }
   }
 
-  async getProfile(usuarioId: string) {
-    return this.prisma.usuario.findUniqueOrThrow({
-      where: { id: usuarioId },
-      select: { id: true, nome: true, email: true, telefone: true, criadoEm: true },
+  async getProfile(userId: string) {
+    return this.prisma.user.findUniqueOrThrow({
+      where: { id: userId },
+      select: { id: true, name: true, email: true, phone: true, createdAt: true },
     })
   }
 
-  async updateProfile(usuarioId: string, dto: UpdateProfileDto) {
-    const updated = await this.prisma.usuario.update({
-      where: { id: usuarioId },
-      data: { nome: dto.nome, telefone: dto.telefone ?? null },
-      select: { id: true, nome: true, email: true, telefone: true },
+  async updateProfile(userId: string, dto: UpdateProfileDto) {
+    return this.prisma.user.update({
+      where: { id: userId },
+      data: { name: dto.name, phone: dto.phone ?? null },
+      select: { id: true, name: true, email: true, phone: true },
     })
-    return updated
   }
 }

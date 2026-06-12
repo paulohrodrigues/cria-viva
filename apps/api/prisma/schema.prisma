@@ -8,188 +8,188 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
-enum TipoFazenda {
-  CORTE
-  LEITE
-  MISTO
+enum FarmType {
+  BEEF
+  DAIRY
+  MIXED
 }
 
-enum PapelUsuario {
+enum UserRole {
   ADMIN
   EDITOR
-  VISUALIZADOR
+  VIEWER
 }
 
-enum StatusAnimal {
-  ATIVA
-  SECA
-  DESCARTADA
-  VENDIDA
-  MORTA
+enum AnimalStatus {
+  ACTIVE
+  DRY
+  CULLED
+  SOLD
+  DEAD
 }
 
-enum TipoEvento {
-  CIO
-  IA
-  MONTA
-  DIAGNOSTICO_GESTACAO
-  PARTO
-  DESMAME
-  DESCARTE
+enum EventType {
+  HEAT
+  INSEMINATION
+  NATURAL_BREEDING
+  PREGNANCY_DIAGNOSIS
+  CALVING
+  WEANING
+  CULLING
 }
 
-enum StatusGestacao {
-  SUSPEITA
-  CONFIRMADA
-  ABORTADA
-  CONCLUIDA
+enum PregnancyStatus {
+  SUSPECTED
+  CONFIRMED
+  ABORTED
+  COMPLETED
 }
 
-enum TipoAlerta {
-  CIO_RETORNO
-  PRE_PARTO_13D
-  PRE_PARTO_7D
-  PRE_PARTO_3D
-  DPP
-  POS_DPP_SEM_REGISTRO
+enum AlertType {
+  HEAT_RETURN
+  PRE_CALVING_13D
+  PRE_CALVING_7D
+  PRE_CALVING_3D
+  DUE_DATE
+  OVERDUE_NO_CALVING
 }
 
-enum StatusAlerta {
-  PENDENTE
-  ENVIADO
-  FALHOU
-  CANCELADO
+enum AlertStatus {
+  PENDING
+  SENT
+  FAILED
+  CANCELED
 }
 
-model Usuario {
+model User {
   id           String   @id @default(uuid())
-  nome         String
+  name         String
   email        String   @unique
-  telefone     String?
-  senhaHash    String   @map("senha_hash")
-  criadoEm    DateTime @default(now()) @map("criado_em")
-  atualizadoEm DateTime @updatedAt @map("atualizado_em")
+  phone        String?
+  passwordHash String   @map("password_hash")
+  createdAt    DateTime @default(now()) @map("created_at")
+  updatedAt    DateTime @updatedAt @map("updated_at")
 
-  fazendas          UsuarioFazenda[]
-  eventos           EventoReprodutivo[]
+  farms             FarmMember[]
+  events            ReproductiveEvent[]
   pushSubscriptions PushSubscription[]
 
-  @@map("usuarios")
+  @@map("users")
 }
 
-model Fazenda {
-  id           String      @id @default(uuid())
-  nome         String
-  cidade       String?
-  estado       String?
-  tipo         TipoFazenda @default(CORTE)
-  criadoEm    DateTime    @default(now()) @map("criado_em")
-  atualizadoEm DateTime    @updatedAt @map("atualizado_em")
+model Farm {
+  id        String   @id @default(uuid())
+  name      String
+  city      String?
+  state     String?
+  type      FarmType @default(BEEF)
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
 
-  usuarios UsuarioFazenda[]
-  animais  Animal[]
-  alertas  Alerta[]
+  members FarmMember[]
+  animals Animal[]
+  alerts  Alert[]
 
-  @@map("fazendas")
+  @@map("farms")
 }
 
-model UsuarioFazenda {
-  usuarioId String      @map("usuario_id")
-  fazendaId String      @map("fazenda_id")
-  papel     PapelUsuario @default(VISUALIZADOR)
+model FarmMember {
+  userId String   @map("user_id")
+  farmId String   @map("farm_id")
+  role   UserRole @default(VIEWER)
 
-  usuario Usuario @relation(fields: [usuarioId], references: [id], onDelete: Cascade)
-  fazenda Fazenda @relation(fields: [fazendaId], references: [id], onDelete: Cascade)
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  farm Farm @relation(fields: [farmId], references: [id], onDelete: Cascade)
 
-  @@id([usuarioId, fazendaId])
-  @@map("usuario_fazenda")
+  @@id([userId, farmId])
+  @@map("farm_members")
 }
 
 model Animal {
-  id           String       @id @default(uuid())
-  fazendaId    String       @map("fazenda_id")
-  brinco       String
-  nome         String?
-  raca         String?
-  nascimento   DateTime?
-  pesoKg       Decimal?     @map("peso_kg")
-  status       StatusAnimal @default(ATIVA)
-  fotoUrl      String?      @map("foto_url")
-  observacoes  String?      @db.Text
-  criadoEm    DateTime     @default(now()) @map("criado_em")
-  atualizadoEm DateTime     @updatedAt @map("atualizado_em")
+  id        String       @id @default(uuid())
+  farmId    String       @map("farm_id")
+  earTag    String       @map("ear_tag")
+  name      String?
+  breed     String?
+  birthDate DateTime?    @map("birth_date")
+  weightKg  Decimal?     @map("weight_kg")
+  status    AnimalStatus @default(ACTIVE)
+  photoUrl  String?      @map("photo_url")
+  notes     String?      @db.Text
+  createdAt DateTime     @default(now()) @map("created_at")
+  updatedAt DateTime     @updatedAt @map("updated_at")
 
-  fazenda   Fazenda             @relation(fields: [fazendaId], references: [id], onDelete: Cascade)
-  eventos   EventoReprodutivo[]
-  gestacoes Gestacao[]
+  farm        Farm                @relation(fields: [farmId], references: [id], onDelete: Cascade)
+  events      ReproductiveEvent[]
+  pregnancies Pregnancy[]
 
-  @@unique([fazendaId, brinco])
-  @@map("animais")
+  @@unique([farmId, earTag])
+  @@map("animals")
 }
 
-model EventoReprodutivo {
-  id           String     @id @default(uuid())
-  animalId     String     @map("animal_id")
-  usuarioId    String?    @map("usuario_id")
-  tipo         TipoEvento
-  dataEvento   DateTime   @map("data_evento")
-  resultado    Boolean?
-  observacoes  String?    @db.Text
-  dadosExtras  Json?      @map("dados_extras")
-  criadoEm    DateTime   @default(now()) @map("criado_em")
+model ReproductiveEvent {
+  id        String    @id @default(uuid())
+  animalId  String    @map("animal_id")
+  userId    String?   @map("user_id")
+  type      EventType
+  eventDate DateTime  @map("event_date")
+  result    Boolean?
+  notes     String?   @db.Text
+  extraData Json?     @map("extra_data")
+  createdAt DateTime  @default(now()) @map("created_at")
 
-  animal   Animal   @relation(fields: [animalId], references: [id], onDelete: Cascade)
-  usuario  Usuario? @relation(fields: [usuarioId], references: [id])
+  animal Animal @relation(fields: [animalId], references: [id], onDelete: Cascade)
+  user   User?  @relation(fields: [userId], references: [id])
 
-  gestacaoCriada Gestacao? @relation("EventoCobertura")
+  createdPregnancy Pregnancy? @relation("BreedingEvent")
 
-  @@map("eventos_reprodutivos")
+  @@map("reproductive_events")
 }
 
-model Gestacao {
-  id                 String         @id @default(uuid())
-  animalId           String         @map("animal_id")
-  eventoCoberturaId  String?        @unique @map("evento_cobertura_id")
-  dataCobertura      DateTime       @map("data_cobertura")
-  dpp                DateTime
-  dataPartoReal      DateTime?      @map("data_parto_real")
-  status             StatusGestacao @default(SUSPEITA)
-  criadoEm          DateTime       @default(now()) @map("criado_em")
-  atualizadoEm       DateTime       @updatedAt @map("atualizado_em")
+model Pregnancy {
+  id                String          @id @default(uuid())
+  animalId          String          @map("animal_id")
+  breedingEventId   String?         @unique @map("breeding_event_id")
+  breedingDate      DateTime        @map("breeding_date")
+  dueDate           DateTime        @map("due_date")
+  actualCalvingDate DateTime?       @map("actual_calving_date")
+  status            PregnancyStatus @default(SUSPECTED)
+  createdAt         DateTime        @default(now()) @map("created_at")
+  updatedAt         DateTime        @updatedAt @map("updated_at")
 
-  animal          Animal             @relation(fields: [animalId], references: [id], onDelete: Cascade)
-  eventoCobertura EventoReprodutivo? @relation("EventoCobertura", fields: [eventoCoberturaId], references: [id])
-  alertas         Alerta[]
+  animal        Animal             @relation(fields: [animalId], references: [id], onDelete: Cascade)
+  breedingEvent ReproductiveEvent? @relation("BreedingEvent", fields: [breedingEventId], references: [id])
+  alerts        Alert[]
 
-  @@map("gestacoes")
+  @@map("pregnancies")
 }
 
 model PushSubscription {
   id        String   @id @default(uuid())
-  usuarioId String   @map("usuario_id")
+  userId    String   @map("user_id")
   endpoint  String   @unique @db.VarChar(500)
   p256dh    String
   auth      String
-  criadoEm DateTime @default(now()) @map("criado_em")
+  createdAt DateTime @default(now()) @map("created_at")
 
-  usuario Usuario @relation(fields: [usuarioId], references: [id], onDelete: Cascade)
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@map("push_subscriptions")
 }
 
-model Alerta {
-  id           String       @id @default(uuid())
-  gestacaoId   String       @map("gestacao_id")
-  fazendaId    String       @map("fazenda_id")
-  tipo         TipoAlerta
-  dataDisparo  DateTime     @map("data_disparo")
-  status       StatusAlerta @default(PENDENTE)
-  destinatarios Json        @default("[]")
-  enviadoEm    DateTime?    @map("enviado_em")
-  criadoEm    DateTime     @default(now()) @map("criado_em")
+model Alert {
+  id           String      @id @default(uuid())
+  pregnancyId  String      @map("pregnancy_id")
+  farmId       String      @map("farm_id")
+  type         AlertType
+  scheduledFor DateTime    @map("scheduled_for")
+  status       AlertStatus @default(PENDING)
+  recipients   Json        @default("[]")
+  sentAt       DateTime?   @map("sent_at")
+  createdAt    DateTime    @default(now()) @map("created_at")
 
-  gestacao Gestacao @relation(fields: [gestacaoId], references: [id], onDelete: Cascade)
-  fazenda  Fazenda  @relation(fields: [fazendaId], references: [id], onDelete: Cascade)
+  pregnancy Pregnancy @relation(fields: [pregnancyId], references: [id], onDelete: Cascade)
+  farm      Farm      @relation(fields: [farmId], references: [id], onDelete: Cascade)
 
-  @@map("alertas")
+  @@map("alerts")
 }

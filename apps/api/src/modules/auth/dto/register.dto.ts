@@ -4,20 +4,20 @@ export class RegisterDto {
   @IsString()
   @MinLength(2)
   @MaxLength(100)
-  nome: string
+  name: string
 
   @IsEmail()
   @MaxLength(255)
   email: string
 
-  // bcrypt trunca em 72 bytes — limitar evita falsa sensação de entropia extra
+  // bcrypt truncates at 72 bytes — capping avoids a false sense of extra entropy
   @IsString()
   @MinLength(8)
   @MaxLength(72)
-  senha: string
+  password: string
 
   @IsOptional()
   @IsString()
   @MaxLength(20)
-  telefone?: string
+  phone?: string
 }

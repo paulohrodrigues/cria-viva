@@ -1,144 +1,144 @@
 -- CreateTable
-CREATE TABLE `usuarios` (
+CREATE TABLE `users` (
     `id` VARCHAR(191) NOT NULL,
-    `nome` VARCHAR(191) NOT NULL,
+    `name` VARCHAR(191) NOT NULL,
     `email` VARCHAR(191) NOT NULL,
-    `telefone` VARCHAR(191) NULL,
-    `senha_hash` VARCHAR(191) NOT NULL,
-    `criado_em` DATETIME(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3),
-    `atualizado_em` DATETIME(3) NOT NULL,
+    `phone` VARCHAR(191) NULL,
+    `password_hash` VARCHAR(191) NOT NULL,
+    `created_at` DATETIME(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3),
+    `updated_at` DATETIME(3) NOT NULL,
 
-    UNIQUE INDEX `usuarios_email_key`(`email`),
+    UNIQUE INDEX `users_email_key`(`email`),
     PRIMARY KEY (`id`)
 ) DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
 
 -- CreateTable
-CREATE TABLE `fazendas` (
+CREATE TABLE `farms` (
     `id` VARCHAR(191) NOT NULL,
-    `nome` VARCHAR(191) NOT NULL,
-    `cidade` VARCHAR(191) NULL,
-    `estado` VARCHAR(191) NULL,
-    `tipo` ENUM('CORTE', 'LEITE', 'MISTO') NOT NULL DEFAULT 'CORTE',
-    `criado_em` DATETIME(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3),
-    `atualizado_em` DATETIME(3) NOT NULL,
+    `name` VARCHAR(191) NOT NULL,
+    `city` VARCHAR(191) NULL,
+    `state` VARCHAR(191) NULL,
+    `type` ENUM('BEEF', 'DAIRY', 'MIXED') NOT NULL DEFAULT 'BEEF',
+    `created_at` DATETIME(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3),
+    `updated_at` DATETIME(3) NOT NULL,
 
     PRIMARY KEY (`id`)
 ) DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
 
 -- CreateTable
-CREATE TABLE `usuario_fazenda` (
-    `usuario_id` VARCHAR(191) NOT NULL,
-    `fazenda_id` VARCHAR(191) NOT NULL,
-    `papel` ENUM('ADMIN', 'EDITOR', 'VISUALIZADOR') NOT NULL DEFAULT 'VISUALIZADOR',
+CREATE TABLE `farm_members` (
+    `user_id` VARCHAR(191) NOT NULL,
+    `farm_id` VARCHAR(191) NOT NULL,
+    `role` ENUM('ADMIN', 'EDITOR', 'VIEWER') NOT NULL DEFAULT 'VIEWER',
 
-    PRIMARY KEY (`usuario_id`, `fazenda_id`)
+    PRIMARY KEY (`user_id`, `farm_id`)
 ) DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
 
 -- CreateTable
-CREATE TABLE `animais` (
+CREATE TABLE `animals` (
     `id` VARCHAR(191) NOT NULL,
-    `fazenda_id` VARCHAR(191) NOT NULL,
-    `brinco` VARCHAR(191) NOT NULL,
-    `nome` VARCHAR(191) NULL,
-    `raca` VARCHAR(191) NULL,
-    `nascimento` DATETIME(3) NULL,
-    `peso_kg` DECIMAL(65, 30) NULL,
-    `status` ENUM('ATIVA', 'SECA', 'DESCARTADA', 'VENDIDA', 'MORTA') NOT NULL DEFAULT 'ATIVA',
-    `foto_url` VARCHAR(191) NULL,
-    `observacoes` TEXT NULL,
-    `criado_em` DATETIME(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3),
-    `atualizado_em` DATETIME(3) NOT NULL,
+    `farm_id` VARCHAR(191) NOT NULL,
+    `ear_tag` VARCHAR(191) NOT NULL,
+    `name` VARCHAR(191) NULL,
+    `breed` VARCHAR(191) NULL,
+    `birth_date` DATETIME(3) NULL,
+    `weight_kg` DECIMAL(65, 30) NULL,
+    `status` ENUM('ACTIVE', 'DRY', 'CULLED', 'SOLD', 'DEAD') NOT NULL DEFAULT 'ACTIVE',
+    `photo_url` VARCHAR(191) NULL,
+    `notes` TEXT NULL,
+    `created_at` DATETIME(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3),
+    `updated_at` DATETIME(3) NOT NULL,
 
-    UNIQUE INDEX `animais_fazenda_id_brinco_key`(`fazenda_id`, `brinco`),
+    UNIQUE INDEX `animals_farm_id_ear_tag_key`(`farm_id`, `ear_tag`),
     PRIMARY KEY (`id`)
 ) DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
 
 -- CreateTable
-CREATE TABLE `eventos_reprodutivos` (
-    `id` VARCHAR(191) NOT NULL,
-    `animal_id` VARCHAR(191) NOT NULL,
-    `usuario_id` VARCHAR(191) NULL,
-    `tipo` ENUM('CIO', 'IA', 'MONTA', 'DIAGNOSTICO_GESTACAO', 'PARTO', 'DESMAME', 'DESCARTE') NOT NULL,
-    `data_evento` DATETIME(3) NOT NULL,
-    `resultado` BOOLEAN NULL,
-    `observacoes` TEXT NULL,
-    `dados_extras` JSON NULL,
-    `criado_em` DATETIME(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3),
-
-    PRIMARY KEY (`id`)
-) DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
-
--- CreateTable
-CREATE TABLE `gestacoes` (
+CREATE TABLE `reproductive_events` (
     `id` VARCHAR(191) NOT NULL,
     `animal_id` VARCHAR(191) NOT NULL,
-    `evento_cobertura_id` VARCHAR(191) NULL,
-    `data_cobertura` DATETIME(3) NOT NULL,
-    `dpp` DATETIME(3) NOT NULL,
-    `data_parto_real` DATETIME(3) NULL,
-    `status` ENUM('SUSPEITA', 'CONFIRMADA', 'ABORTADA', 'CONCLUIDA') NOT NULL DEFAULT 'SUSPEITA',
-    `criado_em` DATETIME(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3),
-    `atualizado_em` DATETIME(3) NOT NULL,
+    `user_id` VARCHAR(191) NULL,
+    `type` ENUM('HEAT', 'INSEMINATION', 'NATURAL_BREEDING', 'PREGNANCY_DIAGNOSIS', 'CALVING', 'WEANING', 'CULLING') NOT NULL,
+    `event_date` DATETIME(3) NOT NULL,
+    `result` BOOLEAN NULL,
+    `notes` TEXT NULL,
+    `extra_data` JSON NULL,
+    `created_at` DATETIME(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3),
 
-    UNIQUE INDEX `gestacoes_evento_cobertura_id_key`(`evento_cobertura_id`),
+    PRIMARY KEY (`id`)
+) DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
+
+-- CreateTable
+CREATE TABLE `pregnancies` (
+    `id` VARCHAR(191) NOT NULL,
+    `animal_id` VARCHAR(191) NOT NULL,
+    `breeding_event_id` VARCHAR(191) NULL,
+    `breeding_date` DATETIME(3) NOT NULL,
+    `due_date` DATETIME(3) NOT NULL,
+    `actual_calving_date` DATETIME(3) NULL,
+    `status` ENUM('SUSPECTED', 'CONFIRMED', 'ABORTED', 'COMPLETED') NOT NULL DEFAULT 'SUSPECTED',
+    `created_at` DATETIME(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3),
+    `updated_at` DATETIME(3) NOT NULL,
+
+    UNIQUE INDEX `pregnancies_breeding_event_id_key`(`breeding_event_id`),
     PRIMARY KEY (`id`)
 ) DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
 
 -- CreateTable
 CREATE TABLE `push_subscriptions` (
     `id` VARCHAR(191) NOT NULL,
-    `usuario_id` VARCHAR(191) NOT NULL,
+    `user_id` VARCHAR(191) NOT NULL,
     `endpoint` VARCHAR(500) NOT NULL,
     `p256dh` VARCHAR(191) NOT NULL,
     `auth` VARCHAR(191) NOT NULL,
-    `criado_em` DATETIME(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3),
+    `created_at` DATETIME(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3),
 
     UNIQUE INDEX `push_subscriptions_endpoint_key`(`endpoint`),
     PRIMARY KEY (`id`)
 ) DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
 
 -- CreateTable
-CREATE TABLE `alertas` (
+CREATE TABLE `alerts` (
     `id` VARCHAR(191) NOT NULL,
-    `gestacao_id` VARCHAR(191) NOT NULL,
-    `fazenda_id` VARCHAR(191) NOT NULL,
-    `tipo` ENUM('CIO_RETORNO', 'PRE_PARTO_13D', 'PRE_PARTO_7D', 'PRE_PARTO_3D', 'DPP', 'POS_DPP_SEM_REGISTRO') NOT NULL,
-    `data_disparo` DATETIME(3) NOT NULL,
-    `status` ENUM('PENDENTE', 'ENVIADO', 'FALHOU', 'CANCELADO') NOT NULL DEFAULT 'PENDENTE',
-    `destinatarios` JSON NOT NULL,
-    `enviado_em` DATETIME(3) NULL,
-    `criado_em` DATETIME(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3),
+    `pregnancy_id` VARCHAR(191) NOT NULL,
+    `farm_id` VARCHAR(191) NOT NULL,
+    `type` ENUM('HEAT_RETURN', 'PRE_CALVING_13D', 'PRE_CALVING_7D', 'PRE_CALVING_3D', 'DUE_DATE', 'OVERDUE_NO_CALVING') NOT NULL,
+    `scheduled_for` DATETIME(3) NOT NULL,
+    `status` ENUM('PENDING', 'SENT', 'FAILED', 'CANCELED') NOT NULL DEFAULT 'PENDING',
+    `recipients` JSON NOT NULL,
+    `sent_at` DATETIME(3) NULL,
+    `created_at` DATETIME(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3),
 
     PRIMARY KEY (`id`)
 ) DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
 
 -- AddForeignKey
-ALTER TABLE `usuario_fazenda` ADD CONSTRAINT `usuario_fazenda_usuario_id_fkey` FOREIGN KEY (`usuario_id`) REFERENCES `usuarios`(`id`) ON DELETE CASCADE ON UPDATE CASCADE;
+ALTER TABLE `farm_members` ADD CONSTRAINT `farm_members_user_id_fkey` FOREIGN KEY (`user_id`) REFERENCES `users`(`id`) ON DELETE CASCADE ON UPDATE CASCADE;
 
 -- AddForeignKey
-ALTER TABLE `usuario_fazenda` ADD CONSTRAINT `usuario_fazenda_fazenda_id_fkey` FOREIGN KEY (`fazenda_id`) REFERENCES `fazendas`(`id`) ON DELETE CASCADE ON UPDATE CASCADE;
+ALTER TABLE `farm_members` ADD CONSTRAINT `farm_members_farm_id_fkey` FOREIGN KEY (`farm_id`) REFERENCES `farms`(`id`) ON DELETE CASCADE ON UPDATE CASCADE;
 
 -- AddForeignKey
-ALTER TABLE `animais` ADD CONSTRAINT `animais_fazenda_id_fkey` FOREIGN KEY (`fazenda_id`) REFERENCES `fazendas`(`id`) ON DELETE CASCADE ON UPDATE CASCADE;
+ALTER TABLE `animals` ADD CONSTRAINT `animals_farm_id_fkey` FOREIGN KEY (`farm_id`) REFERENCES `farms`(`id`) ON DELETE CASCADE ON UPDATE CASCADE;
 
 -- AddForeignKey
-ALTER TABLE `eventos_reprodutivos` ADD CONSTRAINT `eventos_reprodutivos_animal_id_fkey` FOREIGN KEY (`animal_id`) REFERENCES `animais`(`id`) ON DELETE CASCADE ON UPDATE CASCADE;
+ALTER TABLE `reproductive_events` ADD CONSTRAINT `reproductive_events_animal_id_fkey` FOREIGN KEY (`animal_id`) REFERENCES `animals`(`id`) ON DELETE CASCADE ON UPDATE CASCADE;
 
 -- AddForeignKey
-ALTER TABLE `eventos_reprodutivos` ADD CONSTRAINT `eventos_reprodutivos_usuario_id_fkey` FOREIGN KEY (`usuario_id`) REFERENCES `usuarios`(`id`) ON DELETE SET NULL ON UPDATE CASCADE;
+ALTER TABLE `reproductive_events` ADD CONSTRAINT `reproductive_events_user_id_fkey` FOREIGN KEY (`user_id`) REFERENCES `users`(`id`) ON DELETE SET NULL ON UPDATE CASCADE;
 
 -- AddForeignKey
-ALTER TABLE `gestacoes` ADD CONSTRAINT `gestacoes_animal_id_fkey` FOREIGN KEY (`animal_id`) REFERENCES `animais`(`id`) ON DELETE CASCADE ON UPDATE CASCADE;
+ALTER TABLE `pregnancies` ADD CONSTRAINT `pregnancies_animal_id_fkey` FOREIGN KEY (`animal_id`) REFERENCES `animals`(`id`) ON DELETE CASCADE ON UPDATE CASCADE;
 
 -- AddForeignKey
-ALTER TABLE `gestacoes` ADD CONSTRAINT `gestacoes_evento_cobertura_id_fkey` FOREIGN KEY (`evento_cobertura_id`) REFERENCES `eventos_reprodutivos`(`id`) ON DELETE SET NULL ON UPDATE CASCADE;
+ALTER TABLE `pregnancies` ADD CONSTRAINT `pregnancies_breeding_event_id_fkey` FOREIGN KEY (`breeding_event_id`) REFERENCES `reproductive_events`(`id`) ON DELETE SET NULL ON UPDATE CASCADE;
 
 -- AddForeignKey
-ALTER TABLE `push_subscriptions` ADD CONSTRAINT `push_subscriptions_usuario_id_fkey` FOREIGN KEY (`usuario_id`) REFERENCES `usuarios`(`id`) ON DELETE CASCADE ON UPDATE CASCADE;
+ALTER TABLE `push_subscriptions` ADD CONSTRAINT `push_subscriptions_user_id_fkey` FOREIGN KEY (`user_id`) REFERENCES `users`(`id`) ON DELETE CASCADE ON UPDATE CASCADE;
 
 -- AddForeignKey
-ALTER TABLE `alertas` ADD CONSTRAINT `alertas_gestacao_id_fkey` FOREIGN KEY (`gestacao_id`) REFERENCES `gestacoes`(`id`) ON DELETE CASCADE ON UPDATE CASCADE;
+ALTER TABLE `alerts` ADD CONSTRAINT `alerts_pregnancy_id_fkey` FOREIGN KEY (`pregnancy_id`) REFERENCES `pregnancies`(`id`) ON DELETE CASCADE ON UPDATE CASCADE;
 
 -- AddForeignKey
-ALTER TABLE `alertas` ADD CONSTRAINT `alertas_fazenda_id_fkey` FOREIGN KEY (`fazenda_id`) REFERENCES `fazendas`(`id`) ON DELETE CASCADE ON UPDATE CASCADE;
+ALTER TABLE `alerts` ADD CONSTRAINT `alerts_farm_id_fkey` FOREIGN KEY (`farm_id`) REFERENCES `farms`(`id`) ON DELETE CASCADE ON UPDATE CASCADE;
 
