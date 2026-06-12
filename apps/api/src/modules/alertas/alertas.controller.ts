@@ -1,3 +1,4 @@
+import { createHash, timingSafeEqual } from 'crypto'
 import { Controller, Get, Post, UseGuards, Headers, UnauthorizedException } from '@nestjs/common'
 import { ConfigService } from '@nestjs/config'
 import { JwtAuthGuard } from '../auth/jwt-auth.guard'
@@ -38,10 +39,19 @@ export class AlertasController {
   }
 
   @Post('processar')
-  async processar(@Headers('x-cron-secret') secret: string) {
+  async processar(@Headers('x-cron-secret') secret: string | undefined) {
     const expected = this.config.get<string>('CRON_SECRET')
-    if (!expected || secret !== expected) throw new UnauthorizedException()
+    if (!expected || !this.safeCompare(secret ?? '', expected)) {
+      throw new UnauthorizedException()
+    }
     await this.alertasService.processDailyAlerts()
     return { ok: true }
+  }
+
+  // Comparação em tempo constante — hash equaliza os tamanhos dos buffers
+  private safeCompare(a: string, b: string): boolean {
+    const hashA = createHash('sha256').update(a).digest()
+    const hashB = createHash('sha256').update(b).digest()
+    return timingSafeEqual(hashA, hashB)
   }
 }

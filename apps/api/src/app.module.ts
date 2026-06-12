@@ -1,12 +1,14 @@
 import { existsSync } from 'fs'
 import { join } from 'path'
 import { Module } from '@nestjs/common'
+import { APP_GUARD } from '@nestjs/core'
 import { ConfigModule } from '@nestjs/config'
 import { ScheduleModule } from '@nestjs/schedule'
 import { BullModule } from '@nestjs/bullmq'
-import { ThrottlerModule } from '@nestjs/throttler'
+import { ThrottlerModule, ThrottlerGuard } from '@nestjs/throttler'
 import { ServeStaticModule } from '@nestjs/serve-static'
 import { PrismaModule } from './shared/prisma/prisma.module'
+import { FarmAccessModule } from './shared/acesso/farm-access.module'
 import { AuthModule } from './modules/auth/auth.module'
 import { FazendasModule } from './modules/fazendas/fazendas.module'
 import { AnimaisModule } from './modules/animais/animais.module'
@@ -42,11 +44,10 @@ const webDistPath = join(__dirname, '..', '..', '..', 'apps', 'web', 'dist')
         }
       })(),
     }),
-    ThrottlerModule.forRoot([
-      { name: 'default', ttl: 60000, limit: 100 },
-      { name: 'registro', ttl: 86_400_000, limit: 5 },
-    ]),
+    // Limite global; rotas sensíveis (login/registro) têm overrides via @Throttle
+    ThrottlerModule.forRoot([{ ttl: 60_000, limit: 100 }]),
     PrismaModule,
+    FarmAccessModule,
     AuthModule,
     FazendasModule,
     AnimaisModule,
@@ -55,5 +56,6 @@ const webDistPath = join(__dirname, '..', '..', '..', 'apps', 'web', 'dist')
     RelatoriosModule,
     PushModule,
   ],
+  providers: [{ provide: APP_GUARD, useClass: ThrottlerGuard }],
 })
 export class AppModule {}

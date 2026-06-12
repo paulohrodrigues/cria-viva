@@ -1,5 +1,5 @@
 import { Controller, Post, Get, Patch, Body, UseGuards } from '@nestjs/common'
-import { Throttle, ThrottlerGuard } from '@nestjs/throttler'
+import { Throttle } from '@nestjs/throttler'
 import { AuthService } from './auth.service'
 import { RegisterDto } from './dto/register.dto'
 import { LoginDto } from './dto/login.dto'
@@ -11,14 +11,16 @@ import { CurrentUser } from './current-user.decorator'
 export class AuthController {
   constructor(private authService: AuthService) {}
 
+  // Sem verificação de email no cadastro — limite agressivo por IP compensa
   @Post('register')
-  @UseGuards(ThrottlerGuard)
-  @Throttle({ registro: { limit: 5, ttl: 86_400_000 } })
+  @Throttle({ default: { limit: 5, ttl: 86_400_000 } })
   register(@Body() dto: RegisterDto) {
     return this.authService.register(dto)
   }
 
+  // Mitigação de brute-force de credenciais
   @Post('login')
+  @Throttle({ default: { limit: 10, ttl: 60_000 } })
   login(@Body() dto: LoginDto) {
     return this.authService.login(dto)
   }
