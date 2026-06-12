@@ -1,0 +1,24 @@
+# Uso: docker compose -f docker-compose.yml -f docker-compose.prod.yml up -d
+
+services:
+  api:
+    build:
+      target: prod
+    restart: unless-stopped
+    environment:
+      DATABASE_URL: ${DATABASE_URL}
+      REDIS_HOST: redis
+      REDIS_PORT: 6379
+      JWT_SECRET: ${JWT_SECRET}
+      FRONTEND_URL: ${FRONTEND_URL}
+      WHATSAPP_API_URL: ${WHATSAPP_API_URL}
+      WHATSAPP_API_KEY: ${WHATSAPP_API_KEY}
+    volumes: []
+
+  web:
+    build:
+      target: prod
+    restart: unless-stopped
+    ports:
+      - '80:80'
+    volumes: []

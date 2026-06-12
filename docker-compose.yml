@@ -1,0 +1,83 @@
+services:
+  # ─── Infraestrutura ────────────────────────────────────────────
+  postgres:
+    image: postgres:16-alpine
+    container_name: cria-viva-db
+    environment:
+      POSTGRES_USER: criaviva
+      POSTGRES_PASSWORD: criaviva123
+      POSTGRES_DB: criaviva_dev
+    ports:
+      - '5433:5432'
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ['CMD-SHELL', 'pg_isready -U criaviva -d criaviva_dev']
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  redis:
+    image: redis:7-alpine
+    container_name: cria-viva-redis
+    # Porta não exposta ao host — API acessa via rede interna Docker
+    volumes:
+      - redis_data:/data
+    healthcheck:
+      test: ['CMD', 'redis-cli', 'ping']
+      interval: 5s
+      timeout: 3s
+      retries: 10
+
+  # ─── Aplicação ─────────────────────────────────────────────────
+  api:
+    container_name: cria-viva-api
+    build:
+      context: .
+      dockerfile: apps/api/Dockerfile
+      target: dev
+    ports:
+      - '3002:3001'
+    environment:
+      DATABASE_URL: postgresql://criaviva:criaviva123@postgres:5432/criaviva_dev
+      REDIS_HOST: redis
+      REDIS_PORT: 6379
+      JWT_SECRET: dev-secret-local
+      FRONTEND_URL: http://localhost:3001
+      PORT: 3001
+      VAPID_PUBLIC_KEY: BKc4Q1DeSjf2twtNuz9DbgijwIizzqNjZ8kHN26TpC0VlO3pLeGslZ5wPH4p6o5TKFBY4V8JyP0Z_7TjKTskeWQ
+      VAPID_PRIVATE_KEY: KrAYfIRIUaGee8XUeZ9ObYf5kv_ayYyxwCflBB6Vm4Y
+      VAPID_EMAIL: mailto:paulohr.abreu@gmail.com
+      CRON_SECRET: criaviva-cron-dev-2026
+    volumes:
+      - ./packages:/app/packages
+      - ./apps/api/src:/app/apps/api/src
+      - ./apps/api/prisma:/app/apps/api/prisma
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+
+  web:
+    container_name: cria-viva-web
+    build:
+      context: .
+      dockerfile: apps/web/Dockerfile
+      target: dev
+    ports:
+      - '3001:3000'
+    environment:
+      # Dentro do Docker o proxy aponta para o serviço "api" via rede interna
+      VITE_API_TARGET: http://api:3001
+    volumes:
+      - ./packages:/app/packages
+      - ./apps/web/src:/app/apps/web/src
+      - ./apps/web/public:/app/apps/web/public
+      - ./apps/web/index.html:/app/apps/web/index.html
+    depends_on:
+      - api
+
+volumes:
+  postgres_data:
+  redis_data:
