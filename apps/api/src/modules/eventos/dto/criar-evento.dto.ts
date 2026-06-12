@@ -1,8 +1,9 @@
-import { IsString, IsDateString, IsOptional, IsBoolean, IsObject, IsEnum } from 'class-validator'
+import { IsString, IsDateString, IsOptional, IsBoolean, IsObject, IsEnum, MaxLength } from 'class-validator'
+import { TipoEvento } from '@prisma/client'
 
 export class CreateEventoDto {
-  @IsEnum(['CIO', 'IA', 'MONTA', 'DIAGNOSTICO_GESTACAO', 'PARTO', 'DESMAME', 'DESCARTE'])
-  tipo: string
+  @IsEnum(TipoEvento)
+  tipo: TipoEvento
 
   @IsDateString()
   dataEvento: string
@@ -13,6 +14,7 @@ export class CreateEventoDto {
 
   @IsOptional()
   @IsString()
+  @MaxLength(2000)
   observacoes?: string
 
   @IsOptional()

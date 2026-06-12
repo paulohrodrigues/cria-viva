@@ -1,5 +1,5 @@
 import { Controller, Post, Delete, Body, UseGuards, Get } from '@nestjs/common'
-import { IsString, IsObject, ValidateNested } from 'class-validator'
+import { IsString, IsObject, IsUrl, MaxLength, ValidateNested } from 'class-validator'
 import { Type } from 'class-transformer'
 import { JwtAuthGuard } from '../auth/jwt-auth.guard'
 import { CurrentUser } from '../auth/current-user.decorator'
@@ -7,17 +7,21 @@ import { PushService } from './push.service'
 import { ConfigService } from '@nestjs/config'
 
 class PushKeysDto {
-  @IsString() p256dh: string
-  @IsString() auth: string
+  @IsString() @MaxLength(255) p256dh: string
+  @IsString() @MaxLength(255) auth: string
 }
 
 class SubscribeDto {
-  @IsString() endpoint: string
+  // Push services (FCM, Mozilla, WNS) sempre usam HTTPS; 500 = limite da coluna
+  @IsUrl({ require_protocol: true, protocols: ['https'] })
+  @MaxLength(500)
+  endpoint: string
+
   @IsObject() @ValidateNested() @Type(() => PushKeysDto) keys: PushKeysDto
 }
 
 class UnsubscribeDto {
-  @IsString() endpoint: string
+  @IsString() @MaxLength(500) endpoint: string
 }
 
 @Controller('push')

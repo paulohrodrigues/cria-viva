@@ -3,6 +3,7 @@ import { AnimaisService } from './animais.service'
 import { JwtAuthGuard } from '../auth/jwt-auth.guard'
 import { CurrentUser } from '../auth/current-user.decorator'
 import { CreateAnimalDto } from './dto/criar-animal.dto'
+import { UpdateAnimalDto } from './dto/atualizar-animal.dto'
 
 @Controller('fazendas/:fazendaId/animais')
 @UseGuards(JwtAuthGuard)
@@ -37,7 +38,7 @@ export class AnimaisController {
   @Patch(':id')
   update(
     @Param('id') id: string,
-    @Body() dto: Partial<CreateAnimalDto>,
+    @Body() dto: UpdateAnimalDto,
     @CurrentUser() user: { id: string },
   ) {
     return this.animaisService.update(id, dto, user.id)
