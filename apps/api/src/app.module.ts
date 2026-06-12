@@ -36,7 +36,8 @@ const webDistPath = join(__dirname, '..', '..', '..', 'apps', 'web', 'dist')
             host: u.hostname,
             port: Number(u.port) || 6379,
             ...(u.password && { password: u.password }),
-            ...(url.startsWith('rediss://') && { tls: {} }),
+            // Heroku Redis uses self-signed certs — TLS without CA validation
+            ...(url.startsWith('rediss://') && { tls: { rejectUnauthorized: false } }),
           }
         }
         return {
