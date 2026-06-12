@@ -5,5 +5,6 @@ dist
 !.env.example
 .turbo
 *.local
+*.tsbuildinfo
 packages/shared/dist
 packages/shared/node_modules
