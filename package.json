@@ -13,7 +13,7 @@
     "test": "turbo run test",
     "db:migrate": "turbo run db:migrate",
     "db:studio": "cd apps/api && npx prisma studio",
-    "heroku-postbuild": "yarn workspace @cria-viva/shared build && yarn workspace @cria-viva/api db:generate && yarn workspace @cria-viva/web build && yarn workspace @cria-viva/api build"
+    "heroku-postbuild": "npm run build -w @cria-viva/shared && npm run db:generate -w @cria-viva/api && npm run build -w @cria-viva/web && npm run build -w @cria-viva/api"
   },
   "devDependencies": {
     "turbo": "^2.3.0",
