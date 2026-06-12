@@ -1,0 +1,8 @@
+node_modules
+dist
+.env
+.env.*
+.turbo
+*.local
+packages/shared/dist
+packages/shared/node_modules
