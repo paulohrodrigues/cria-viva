@@ -1,0 +1,4 @@
+# Chave VAPID vazada no histórico (commit 293157b5) — já ROTACIONADA em 2026-06-12.
+# A chave antiga é inválida; esta entrada só evita que o CI falhe pelo histórico.
+# Se o histórico for reescrito (git filter-repo), remova esta linha.
+293157b5e03bc907bf4b31dfc1e591c9931d4c68:docker-compose.yml:generic-api-key:49

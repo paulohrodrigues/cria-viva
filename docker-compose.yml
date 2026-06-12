@@ -46,9 +46,12 @@ services:
       JWT_SECRET: dev-secret-local
       FRONTEND_URL: http://localhost:3001
       PORT: 3001
-      VAPID_PUBLIC_KEY: BKc4Q1DeSjf2twtNuz9DbgijwIizzqNjZ8kHN26TpC0VlO3pLeGslZ5wPH4p6o5TKFBY4V8JyP0Z_7TjKTskeWQ
-      VAPID_PRIVATE_KEY: KrAYfIRIUaGee8XUeZ9ObYf5kv_ayYyxwCflBB6Vm4Y
-      VAPID_EMAIL: mailto:paulohr.abreu@gmail.com
+      # Chaves VAPID vêm do .env (gitignored) — gere as suas com:
+      #   npx web-push generate-vapid-keys
+      # Sem elas a API sobe normalmente, apenas com push desabilitado.
+      VAPID_PUBLIC_KEY: ${VAPID_PUBLIC_KEY:-}
+      VAPID_PRIVATE_KEY: ${VAPID_PRIVATE_KEY:-}
+      VAPID_EMAIL: ${VAPID_EMAIL:-mailto:dev@localhost}
       CRON_SECRET: criaviva-cron-dev-2026
     volumes:
       - ./packages:/app/packages
