@@ -2,6 +2,11 @@
   "name": "cria-viva",
   "version": "0.1.0",
   "private": true,
+  "license": "Polyform-Noncommercial-1.0.0",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/paulohrodrigues/cria-viva.git"
+  },
   "workspaces": [
     "apps/*",
     "packages/*"

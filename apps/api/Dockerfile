@@ -1,5 +1,5 @@
 # ─── Dev stage ────────────────────────────────────────────────────────────────
-FROM node:20-alpine AS dev
+FROM node:24-alpine AS dev
 
 RUN apk add --no-cache openssl
 
@@ -32,7 +32,7 @@ FROM dev AS builder
 RUN yarn build
 
 # ─── Production stage ─────────────────────────────────────────────────────────
-FROM node:20-alpine AS prod
+FROM node:24-alpine AS prod
 
 RUN apk add --no-cache openssl
 
