@@ -1,21 +1,22 @@
 services:
   # ─── Infraestrutura ────────────────────────────────────────────
-  postgres:
-    image: postgres:16-alpine
+  mariadb:
+    image: mariadb:lts
     container_name: cria-viva-db
     environment:
-      POSTGRES_USER: criaviva
-      POSTGRES_PASSWORD: criaviva123
-      POSTGRES_DB: criaviva_dev
+      MARIADB_USER: criaviva
+      MARIADB_PASSWORD: criaviva123
+      MARIADB_DATABASE: criaviva_dev
+      MARIADB_ROOT_PASSWORD: root123
     ports:
-      - '5433:5432'
+      - '3306:3306'
     volumes:
-      - postgres_data:/var/lib/postgresql/data
+      - mariadb_data:/var/lib/mysql
     healthcheck:
-      test: ['CMD-SHELL', 'pg_isready -U criaviva -d criaviva_dev']
+      test: ['CMD', 'mysqladmin', 'ping', '-h', 'localhost', '-ucriaviva', '-pcriaviva123']
       interval: 5s
       timeout: 5s
-      retries: 10
+      retries: 15
 
   redis:
     image: redis:7-alpine
@@ -39,7 +40,7 @@ services:
     ports:
       - '3002:3001'
     environment:
-      DATABASE_URL: postgresql://criaviva:criaviva123@postgres:5432/criaviva_dev
+      DATABASE_URL: mysql://criaviva:criaviva123@mariadb:3306/criaviva_dev
       REDIS_HOST: redis
       REDIS_PORT: 6379
       JWT_SECRET: dev-secret-local
@@ -54,7 +55,7 @@ services:
       - ./apps/api/src:/app/apps/api/src
       - ./apps/api/prisma:/app/apps/api/prisma
     depends_on:
-      postgres:
+      mariadb:
         condition: service_healthy
       redis:
         condition: service_healthy
@@ -79,5 +80,5 @@ services:
       - api
 
 volumes:
-  postgres_data:
+  mariadb_data:
   redis_data:
