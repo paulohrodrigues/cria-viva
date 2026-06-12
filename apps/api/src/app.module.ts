@@ -43,7 +43,8 @@ const webDistPath = join(__dirname, '..', '..', '..', 'apps', 'web', 'dist')
       })(),
     }),
     ThrottlerModule.forRoot([
-      { ttl: 60000, limit: 100 },
+      { name: 'default', ttl: 60000, limit: 100 },
+      { name: 'registro', ttl: 86_400_000, limit: 5 },
     ]),
     PrismaModule,
     AuthModule,
