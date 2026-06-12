@@ -1,15 +1,19 @@
-import { Injectable, ForbiddenException } from '@nestjs/common'
-import { StatusAnimal } from '@prisma/client'
+import { Injectable } from '@nestjs/common'
 import { PrismaService } from '../../shared/prisma/prisma.service'
+import { FarmAccessService } from '../../shared/acesso/farm-access.service'
 import { CreateAnimalDto } from './dto/criar-animal.dto'
+import { UpdateAnimalDto } from './dto/atualizar-animal.dto'
 import { calculateRemainingDays } from '@cria-viva/shared'
 
 @Injectable()
 export class AnimaisService {
-  constructor(private prisma: PrismaService) {}
+  constructor(
+    private prisma: PrismaService,
+    private acesso: FarmAccessService,
+  ) {}
 
   async list(fazendaId: string, usuarioId: string) {
-    await this.checkAccess(fazendaId, usuarioId)
+    await this.acesso.assertMember(fazendaId, usuarioId)
 
     const animals = await this.prisma.animal.findMany({
       where: { fazendaId, status: { not: 'MORTA' } },
@@ -49,12 +53,12 @@ export class AnimaisService {
       },
     })
 
-    await this.checkAccess(animal.fazendaId, usuarioId)
+    await this.acesso.assertMember(animal.fazendaId, usuarioId)
     return animal
   }
 
   async create(fazendaId: string, dto: CreateAnimalDto, usuarioId: string) {
-    await this.checkAccess(fazendaId, usuarioId)
+    await this.acesso.assertEditor(fazendaId, usuarioId)
     return this.prisma.animal.create({
       data: {
         fazendaId,
@@ -63,15 +67,15 @@ export class AnimaisService {
         raca: dto.raca,
         nascimento: dto.nascimento ? new Date(dto.nascimento) : undefined,
         pesoKg: dto.pesoKg,
-        status: dto.status as StatusAnimal | undefined,
+        status: dto.status,
         observacoes: dto.observacoes,
       },
     })
   }
 
-  async update(id: string, dto: Partial<CreateAnimalDto>, usuarioId: string) {
+  async update(id: string, dto: UpdateAnimalDto, usuarioId: string) {
     const animal = await this.prisma.animal.findUniqueOrThrow({ where: { id } })
-    await this.checkAccess(animal.fazendaId, usuarioId)
+    await this.acesso.assertEditor(animal.fazendaId, usuarioId)
     return this.prisma.animal.update({
       where: { id },
       data: {
@@ -80,16 +84,9 @@ export class AnimaisService {
         raca: dto.raca,
         nascimento: dto.nascimento ? new Date(dto.nascimento) : undefined,
         pesoKg: dto.pesoKg,
-        status: dto.status as StatusAnimal | undefined,
+        status: dto.status,
         observacoes: dto.observacoes,
       },
     })
-  }
-
-  private async checkAccess(fazendaId: string, usuarioId: string) {
-    const member = await this.prisma.usuarioFazenda.findUnique({
-      where: { usuarioId_fazendaId: { usuarioId, fazendaId } },
-    })
-    if (!member) throw new ForbiddenException('Acesso negado a esta fazenda')
   }
 }

@@ -1,41 +1,41 @@
-import { Injectable, ForbiddenException, BadRequestException, NotFoundException } from '@nestjs/common'
-import { TipoEvento, Prisma } from '@prisma/client'
+import { Injectable, BadRequestException, NotFoundException } from '@nestjs/common'
+import { StatusAnimal, Prisma } from '@prisma/client'
 import { PrismaService } from '../../shared/prisma/prisma.service'
+import { FarmAccessService } from '../../shared/acesso/farm-access.service'
 import { EventHandlerRegistry } from './handlers/event-handler.registry'
 import { CreateEventoDto } from './dto/criar-evento.dto'
 import { ValidationContext, ReproductiveState } from './handlers/validation-context'
 
-const STATUS_TERMINAL = ['DESCARTADA', 'VENDIDA', 'MORTA'] as const
+const STATUS_TERMINAL: StatusAnimal[] = ['DESCARTADA', 'VENDIDA', 'MORTA']
 
 @Injectable()
 export class EventosService {
   constructor(
     private prisma: PrismaService,
+    private acesso: FarmAccessService,
     private registry: EventHandlerRegistry,
   ) {}
 
   async create(animalId: string, dto: CreateEventoDto, usuarioId: string) {
     const animal = await this.prisma.animal.findUniqueOrThrow({ where: { id: animalId } })
-    await this.checkAccess(animal.fazendaId, usuarioId)
+    await this.acesso.assertEditor(animal.fazendaId, usuarioId)
 
-    if (STATUS_TERMINAL.includes(animal.status as any)) {
+    if (STATUS_TERMINAL.includes(animal.status)) {
       throw new BadRequestException(
         `Não é possível registrar eventos em um animal com status "${animal.status}"`,
       )
     }
 
     const eventDate = new Date(dto.dataEvento)
-    await this.validateEventDate(animalId, eventDate)
-
-    const tipo = dto.tipo as TipoEvento
     const context = await this.buildValidationContext(animalId, eventDate)
-    await this.registry.resolve(tipo).validate(context)
+    this.validateEventDate(context)
+    await this.registry.resolve(dto.tipo).validate(context)
 
     const evento = await this.prisma.eventoReprodutivo.create({
       data: {
         animalId,
         usuarioId,
-        tipo,
+        tipo: dto.tipo,
         dataEvento: eventDate,
         resultado: dto.resultado,
         observacoes: dto.observacoes,
@@ -43,27 +43,37 @@ export class EventosService {
       },
     })
 
-    await this.registry.resolve(tipo).apply(animalId, evento.id, dto)
+    // Compensação: se o efeito colateral falhar (ex.: criar gestação),
+    // remove o evento para não deixar o histórico inconsistente
+    try {
+      await this.registry.resolve(dto.tipo).apply(animalId, evento.id, dto)
+    } catch (err) {
+      await this.prisma.eventoReprodutivo
+        .delete({ where: { id: evento.id } })
+        .catch(() => undefined)
+      throw err
+    }
+
     return evento
   }
 
   async delete(animalId: string, eventoId: string, usuarioId: string) {
     const animal = await this.prisma.animal.findUniqueOrThrow({ where: { id: animalId } })
-    await this.checkAccess(animal.fazendaId, usuarioId)
+    await this.acesso.assertEditor(animal.fazendaId, usuarioId)
 
     const evento = await this.prisma.eventoReprodutivo.findFirst({
       where: { id: eventoId, animalId },
     })
     if (!evento) throw new NotFoundException('Evento não encontrado')
 
-    await this.registry.resolve(evento.tipo as TipoEvento).revert(evento)
+    await this.registry.resolve(evento.tipo).revert(evento)
     await this.prisma.eventoReprodutivo.delete({ where: { id: eventoId } })
     return { ok: true }
   }
 
   async listByAnimal(animalId: string, usuarioId: string) {
     const animal = await this.prisma.animal.findUniqueOrThrow({ where: { id: animalId } })
-    await this.checkAccess(animal.fazendaId, usuarioId)
+    await this.acesso.assertMember(animal.fazendaId, usuarioId)
 
     return this.prisma.eventoReprodutivo.findMany({
       where: { animalId },
@@ -97,16 +107,12 @@ export class EventosService {
     return { state, activePregnancy, lastEvent, eventDate }
   }
 
-  private async validateEventDate(animalId: string, eventDate: Date) {
-    const lastEvent = await this.prisma.eventoReprodutivo.findFirst({
-      where: { animalId },
-      orderBy: { dataEvento: 'desc' },
-    })
-    if (!lastEvent) return
+  private validateEventDate(context: ValidationContext) {
+    if (!context.lastEvent) return
 
-    const newDate = new Date(eventDate)
+    const newDate = new Date(context.eventDate)
     newDate.setHours(0, 0, 0, 0)
-    const lastDate = new Date(lastEvent.dataEvento)
+    const lastDate = new Date(context.lastEvent.dataEvento)
     lastDate.setHours(0, 0, 0, 0)
 
     if (newDate < lastDate) {
@@ -115,12 +121,5 @@ export class EventosService {
         `Data inválida: ${fmt(newDate)} é anterior ao último evento registrado (${fmt(lastDate)}). Corrija a data ou apague o evento mais recente primeiro.`,
       )
     }
-  }
-
-  private async checkAccess(fazendaId: string, usuarioId: string) {
-    const member = await this.prisma.usuarioFazenda.findUnique({
-      where: { usuarioId_fazendaId: { usuarioId, fazendaId } },
-    })
-    if (!member) throw new ForbiddenException('Acesso negado')
   }
 }

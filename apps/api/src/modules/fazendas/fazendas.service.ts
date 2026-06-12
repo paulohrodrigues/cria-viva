@@ -1,12 +1,15 @@
-import { Injectable, ForbiddenException } from '@nestjs/common'
-import { TipoFazenda } from '@prisma/client'
+import { Injectable } from '@nestjs/common'
 import { PrismaService } from '../../shared/prisma/prisma.service'
+import { FarmAccessService } from '../../shared/acesso/farm-access.service'
 import { CreateFazendaDto } from './dto/criar-fazenda.dto'
 import { calculateRemainingDays, classifyAlertUrgency } from '@cria-viva/shared'
 
 @Injectable()
 export class FazendasService {
-  constructor(private prisma: PrismaService) {}
+  constructor(
+    private prisma: PrismaService,
+    private acesso: FarmAccessService,
+  ) {}
 
   async list(usuarioId: string) {
     const members = await this.prisma.usuarioFazenda.findMany({
@@ -17,22 +20,25 @@ export class FazendasService {
   }
 
   async create(dto: CreateFazendaDto, usuarioId: string) {
-    const farm = await this.prisma.fazenda.create({
-      data: {
-        nome: dto.nome,
-        cidade: dto.cidade,
-        estado: dto.estado,
-        tipo: (dto.tipo ?? 'CORTE') as TipoFazenda,
-      },
+    // Transação: fazenda sem vínculo de ADMIN ficaria órfã e inacessível
+    return this.prisma.$transaction(async (tx) => {
+      const farm = await tx.fazenda.create({
+        data: {
+          nome: dto.nome,
+          cidade: dto.cidade,
+          estado: dto.estado,
+          tipo: dto.tipo ?? 'CORTE',
+        },
+      })
+      await tx.usuarioFazenda.create({
+        data: { usuarioId, fazendaId: farm.id, papel: 'ADMIN' },
+      })
+      return farm
     })
-    await this.prisma.usuarioFazenda.create({
-      data: { usuarioId, fazendaId: farm.id, papel: 'ADMIN' },
-    })
-    return farm
   }
 
   async dashboard(fazendaId: string, usuarioId: string) {
-    await this.checkAccess(fazendaId, usuarioId)
+    await this.acesso.assertMember(fazendaId, usuarioId)
 
     const today = new Date()
     today.setHours(0, 0, 0, 0)
@@ -41,7 +47,7 @@ export class FazendasService {
     const in30Days = new Date(today)
     in30Days.setDate(in30Days.getDate() + 30)
 
-    const [totalActive, pregnancies] = await Promise.all([
+    const [totalActive, pregnancies, totalOpen] = await Promise.all([
       this.prisma.animal.count({
         where: { fazendaId, status: { in: ['ATIVA', 'SECA'] } },
       }),
@@ -53,6 +59,13 @@ export class FazendasService {
         include: { animal: true },
         orderBy: { dpp: 'asc' },
       }),
+      this.prisma.animal.count({
+        where: {
+          fazendaId,
+          status: 'ATIVA',
+          gestacoes: { none: { status: { in: ['SUSPEITA', 'CONFIRMADA'] } } },
+        },
+      }),
     ])
 
     const birthsThisWeek = pregnancies.filter(
@@ -61,13 +74,6 @@ export class FazendasService {
     const birthsThisMonth = pregnancies.filter(
       (g) => g.dpp >= today && g.dpp <= in30Days,
     )
-    const totalOpen = await this.prisma.animal.count({
-      where: {
-        fazendaId,
-        status: 'ATIVA',
-        gestacoes: { none: { status: { in: ['SUSPEITA', 'CONFIRMADA'] } } },
-      },
-    })
 
     const upcomingBirths = pregnancies.slice(0, 10).map((g) => {
       const daysRemaining = calculateRemainingDays(g.dpp)
@@ -90,12 +96,5 @@ export class FazendasService {
       totalOpen,
       upcomingBirths,
     }
-  }
-
-  private async checkAccess(fazendaId: string, usuarioId: string) {
-    const member = await this.prisma.usuarioFazenda.findUnique({
-      where: { usuarioId_fazendaId: { usuarioId, fazendaId } },
-    })
-    if (!member) throw new ForbiddenException('Acesso negado')
   }
 }

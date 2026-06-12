@@ -1,12 +1,16 @@
-import { Injectable, ForbiddenException } from '@nestjs/common'
+import { Injectable } from '@nestjs/common'
 import { PrismaService } from '../../shared/prisma/prisma.service'
+import { FarmAccessService } from '../../shared/acesso/farm-access.service'
 
 @Injectable()
 export class RelatoriosService {
-  constructor(private prisma: PrismaService) {}
+  constructor(
+    private prisma: PrismaService,
+    private acesso: FarmAccessService,
+  ) {}
 
   async reproductiveEfficiency(fazendaId: string, usuarioId: string) {
-    await this.checkAccess(fazendaId, usuarioId)
+    await this.acesso.assertMember(fazendaId, usuarioId)
 
     const [totalIAs, pregnancies, diagnosticosPositivos, partos, openCowCount] = await Promise.all([
       this.prisma.eventoReprodutivo.count({
@@ -45,7 +49,7 @@ export class RelatoriosService {
   }
 
   async openCows(fazendaId: string, usuarioId: string) {
-    await this.checkAccess(fazendaId, usuarioId)
+    await this.acesso.assertMember(fazendaId, usuarioId)
 
     const animals = await this.prisma.animal.findMany({
       where: {
@@ -72,12 +76,5 @@ export class RelatoriosService {
         ? Math.floor((Date.now() - new Date(a.eventos[0].dataEvento).getTime()) / 86400000)
         : null,
     }))
-  }
-
-  private async checkAccess(fazendaId: string, usuarioId: string) {
-    const member = await this.prisma.usuarioFazenda.findUnique({
-      where: { usuarioId_fazendaId: { usuarioId, fazendaId } },
-    })
-    if (!member) throw new ForbiddenException('Acesso negado')
   }
 }
